@@ -93,7 +93,7 @@
   - MRR em risco de 90 dias: US$ 333 mil (35% nas 20 primeiras contas).
 - **Próximo:** F5 — camada `api`, painel React, assistente e MCP.
 
-## 2026-10-23 11:25–12:45 · F5/F6 · API, painel, usuários por área, deploy e relatório
+## 2026-10-23 11:25–12:36 · F5/F6 · API, painel, usuários por área, deploy e relatório
 - **Pedi à IA:** fechar até 13–14h com deploy no Render. Depois pedi usuários com os perfis de cada área, a visão geral para todos e um admin com todas as visões.
 - **A IA fez:**
   - **Banco:** camada `api` (views só leitura e `run_readonly_query` com bloqueios testados), prompts e perfis editáveis, e papéis e usuários (`app.roles`, `app.users`, código com hash PBKDF2).
