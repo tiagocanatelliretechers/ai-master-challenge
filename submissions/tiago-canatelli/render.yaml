@@ -20,7 +20,7 @@ services:
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
-      - key: ACCESS_CODE         # protege o assistente (custo) e a edição de prompts
+      - key: AUTH_SECRET         # assina os tokens de login do painel
         generateValue: true
       - key: MCP_TOKEN           # bearer do MCP remoto em /mcp
         generateValue: true

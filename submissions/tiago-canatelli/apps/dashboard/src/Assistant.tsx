@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { API_URL, post } from './api'
+import { API_URL, post, type User } from './api'
 import { useView } from './hooks'
 import { Badge, Card } from './ui'
 
@@ -13,29 +13,28 @@ function render(body: string, vars: Record<string, string>) {
   return body.replace(/\{\{(\w+)\}\}/g, (_, k: string) => vars[k] ?? `{{${k}}}`)
 }
 
-export default function AssistantPage({ initialQuestion }: { initialQuestion: string | null }) {
+export default function AssistantPage({ initialQuestion, user }: { initialQuestion: string | null; user: User }) {
+  const chooseProfile = user.role === 'admin' || user.role === 'executivo'
   const [refresh, setRefresh] = useState(0)
   const prompts = useView<Prompt>('prompts', {}, refresh)
   const profiles = useView<Profile>('profiles', {}, refresh)
   const [slug, setSlug] = useState<string | null>(null)
-  const [profile, setProfile] = useState('executivo')
+  const [profile, setProfile] = useState(user.profile_slug ?? 'executivo')
   const [vars, setVars] = useState<Record<string, string>>({})
   const [text, setText] = useState(initialQuestion ?? '')
   const [result, setResult] = useState<Answer | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [code, setCode] = useState(() => { try { return localStorage.getItem('accessCode') ?? '' } catch { return '' } })
   const [editingProfile, setEditingProfile] = useState(false)
   const prompt = prompts.data?.find((p) => p.slug === slug)
   const prof = profiles.data?.find((p) => p.slug === profile)
 
-  useEffect(() => { if (initialQuestion) { setText(initialQuestion); setSlug(null); setProfile('cs') } }, [initialQuestion])
+  useEffect(() => { if (initialQuestion) { setText(initialQuestion); setSlug(null); if (chooseProfile) setProfile('cs') } }, [initialQuestion, chooseProfile])
 
   const choose = (p: Prompt) => {
     const v = Object.fromEntries((p.variables ?? []).map((x) => [x.name, x.default]))
-    setSlug(p.slug); setProfile(p.profile_slug); setVars(v); setText(render(p.body, v)); setResult(null)
+    setSlug(p.slug); if (chooseProfile) setProfile(p.profile_slug); setVars(v); setText(render(p.body, v)); setResult(null)
   }
-  const saveCode = (v: string) => { setCode(v); try { localStorage.setItem('accessCode', v) } catch { /* ok */ } }
 
   const ask = async () => {
     setBusy(true); setError(null); setResult(null)
@@ -67,9 +66,6 @@ export default function AssistantPage({ initialQuestion }: { initialQuestion: st
             ))}
           </ul>
         </Card>
-        <Card title="Código de acesso" subtitle="Necessário para usar a IA e salvar edições (evita custo indevido)">
-          <input type="password" className="w-full rounded-lg border border-slate-300 bg-transparent px-2 py-1 text-sm dark:border-slate-700" value={code} onChange={(e) => saveCode(e.target.value)} />
-        </Card>
         <Card title="Conectar via MCP" subtitle="Mesmas tools no Claude, ChatGPT, Cursor…">
           <pre className="overflow-auto rounded bg-slate-100 p-2 text-[11px] dark:bg-slate-800">{`claude mcp add --transport http ravenstack-churn \\\n  ${API_URL}/mcp \\\n  --header "Authorization: Bearer <MCP_TOKEN>"`}</pre>
         </Card>
@@ -79,13 +75,13 @@ export default function AssistantPage({ initialQuestion }: { initialQuestion: st
         <Card title="Pergunte ao analista" subtitle="A IA consulta o lake (views api.*) e responde com Resposta · Por quê · Confiança · Próxima ação">
           <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
             <label className="muted">Analisar como</label>
-            <select className="rounded-lg border border-slate-300 bg-transparent px-2 py-1 dark:border-slate-700" value={profile} onChange={(e) => setProfile(e.target.value)}>
+            <select disabled={!chooseProfile} className="rounded-lg border border-slate-300 bg-transparent px-2 py-1 disabled:opacity-70 dark:border-slate-700" value={profile} onChange={(e) => setProfile(e.target.value)}>
               {(profiles.data ?? []).map((p) => <option key={p.slug} value={p.slug}>{p.name}</option>)}
             </select>
             {prof && <button className="muted text-xs underline" onClick={() => setEditingProfile((x) => !x)}>{editingProfile ? 'fechar perfil' : 'ver/editar perfil'}</button>}
             {prof?.is_customized && <Badge tone="amber">perfil personalizado</Badge>}
           </div>
-          {editingProfile && prof && <ProfileEditor profile={prof} onSaved={() => setRefresh((x) => x + 1)} onError={setError} />}
+          {editingProfile && prof && <ProfileEditor canEdit={user.can_edit} profile={prof} onSaved={() => setRefresh((x) => x + 1)} onError={setError} />}
           {prompt && (prompt.variables ?? []).length > 0 && (
             <div className="mb-2 flex flex-wrap gap-2">
               {prompt.variables.map((v) => (
@@ -99,8 +95,8 @@ export default function AssistantPage({ initialQuestion }: { initialQuestion: st
           <textarea className="h-28 w-full rounded-lg border border-slate-300 bg-transparent p-2 text-sm dark:border-slate-700" value={text} onChange={(e) => setText(e.target.value)} placeholder="Escreva sua pergunta ou escolha uma pronta…" />
           <div className="mt-2 flex flex-wrap gap-2">
             <button disabled={busy || !text.trim()} onClick={ask} className="rounded-lg bg-slate-900 px-4 py-1.5 text-sm text-white disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900">{busy ? 'Analisando…' : 'Perguntar'}</button>
-            {prompt && <button onClick={savePrompt} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-700">Salvar como padrão deste prompt</button>}
-            {prompt?.is_customized && <button onClick={restorePrompt} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-700">Restaurar original</button>}
+            {prompt && user.can_edit && <button onClick={savePrompt} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-700">Salvar como padrão deste prompt</button>}
+            {prompt?.is_customized && user.can_edit && <button onClick={restorePrompt} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-700">Restaurar original</button>}
           </div>
           {error && <p className="mt-2 text-sm text-rose-600">{error}</p>}
         </Card>
@@ -122,7 +118,7 @@ export default function AssistantPage({ initialQuestion }: { initialQuestion: st
   )
 }
 
-function ProfileEditor({ profile, onSaved, onError }: { profile: Profile; onSaved: () => void; onError: (e: string) => void }) {
+function ProfileEditor({ profile, onSaved, onError, canEdit }: { profile: Profile; onSaved: () => void; onError: (e: string) => void; canEdit: boolean }) {
   const [text, setText] = useState(profile.instructions)
   useEffect(() => setText(profile.instructions), [profile])
   const save = async () => { try { await post(`/profiles/${profile.slug}`, { text }, 'PUT'); onSaved() } catch (e) { onError((e as Error).message) } }
@@ -131,10 +127,10 @@ function ProfileEditor({ profile, onSaved, onError }: { profile: Profile; onSave
     <div className="mb-3 rounded-lg bg-slate-50 p-2 dark:bg-slate-800">
       <p className="text-xs"><b>{profile.name}:</b> {profile.question}</p>
       <textarea className="mt-1 h-20 w-full rounded border border-slate-300 bg-transparent p-1 text-xs dark:border-slate-700" value={text} onChange={(e) => setText(e.target.value)} />
-      <div className="mt-1 flex gap-2 text-xs">
+      {canEdit && <div className="mt-1 flex gap-2 text-xs">
         <button onClick={save} className="rounded border border-slate-300 px-2 py-0.5 dark:border-slate-600">Salvar perfil</button>
         {profile.is_customized && <button onClick={restore} className="rounded border border-slate-300 px-2 py-0.5 dark:border-slate-600">Restaurar padrão</button>}
-      </div>
+      </div>}
     </div>
   )
 }

@@ -26,4 +26,5 @@ known-third-party = ["supabase"]
 
 [tool.ruff.lint.per-file-ignores]
 "analysis/*" = ["E501"]  # textos narrativos longos nas evidências
-"apps/api/*" = ["E501"]  # prompts e SQL em texto
+"apps/api/*" = ["E501", "B008"]  # prompts e SQL em texto
+"scripts/*" = ["E501"]

@@ -2,7 +2,7 @@
 
 Uso: uv run python scripts/render_deploy.py
 Precisa no .env: RENDER_API_KEY, RENDER_DATABASE_URL (pooler IPv4), ANTHROPIC_API_KEY.
-Gera ACCESS_CODE e MCP_TOKEN (gravados no .env para você usar no painel e no MCP).
+Gera AUTH_SECRET e MCP_TOKEN (gravados no .env para você usar no painel e no MCP).
 """
 
 import secrets
@@ -45,13 +45,13 @@ def main() -> None:
         for s in client.get("/services", params={"limit": 50}).json()
     }
 
-    access_code = ensure_secret(env, "ACCESS_CODE")
+    auth_secret = ensure_secret(env, "AUTH_SECRET")
     mcp_token = ensure_secret(env, "MCP_TOKEN")
     api_env = [
         {"key": "PYTHON_VERSION", "value": "3.12.8"},
         {"key": "DATABASE_URL", "value": env["RENDER_DATABASE_URL"]},
         {"key": "ANTHROPIC_API_KEY", "value": env["ANTHROPIC_API_KEY"]},
-        {"key": "ACCESS_CODE", "value": access_code},
+        {"key": "AUTH_SECRET", "value": auth_secret},
         {"key": "MCP_TOKEN", "value": mcp_token},
         {"key": "CORS_ORIGINS", "value": "*"},
     ]
@@ -121,7 +121,7 @@ def main() -> None:
             json=[{"type": "rewrite", "source": "/*", "destination": "/index.html"}],
         )
     print("Dashboard:", dash["serviceDetails"]["url"])
-    print("ACCESS_CODE e MCP_TOKEN estão no .env.")
+    print("AUTH_SECRET e MCP_TOKEN estão no .env; códigos dos usuários em .users.local.md.")
 
 
 if __name__ == "__main__":

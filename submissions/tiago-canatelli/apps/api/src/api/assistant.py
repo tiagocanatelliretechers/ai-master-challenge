@@ -36,7 +36,10 @@ def _profile_instructions(profile_slug: str | None) -> str:
 
 
 def ask(
-    question: str, profile_slug: str | None = None, prompt_slug: str | None = None
+    question: str,
+    profile_slug: str | None = None,
+    prompt_slug: str | None = None,
+    user_email: str | None = None,
 ) -> dict[str, Any]:
     if db.settings.anthropic_api_key is None:
         raise RuntimeError("ANTHROPIC_API_KEY não configurada")
@@ -87,10 +90,11 @@ def ask(
     finally:
         latency = int((time.monotonic() - t0) * 1000)
         db.execute(
-            """insert into app.ai_runs (profile_slug, prompt_slug, question, answer, model, tool_calls,
+            """insert into app.ai_runs (user_email, profile_slug, prompt_slug, question, answer, model, tool_calls,
                                         input_tokens, output_tokens, latency_ms, error)
-               values (%s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s)""",
+               values (%s, %s, %s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s)""",
             (
+                user_email,
                 profile_slug,
                 prompt_slug,
                 question,

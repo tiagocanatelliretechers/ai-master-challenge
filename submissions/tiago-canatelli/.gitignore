@@ -11,3 +11,5 @@ dist/
 
 # dashboard
 apps/dashboard/.env.local
+
+.users.local.md

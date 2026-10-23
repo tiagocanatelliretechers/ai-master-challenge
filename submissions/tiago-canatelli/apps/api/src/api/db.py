@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     database_url: SecretStr
     anthropic_api_key: SecretStr | None = None
-    access_code: SecretStr | None = None  # protege escrita e assistente (custo)
+    auth_secret: SecretStr | None = None  # assina os tokens de login do painel
     mcp_token: SecretStr | None = None  # bearer do MCP remoto
     claude_model: str = "claude-opus-5-5"
     claude_effort: str = "medium"

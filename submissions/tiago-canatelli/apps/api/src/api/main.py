@@ -1,4 +1,4 @@
-"""API HTTP: dados do painel, prompts/perfis editáveis, assistente e MCP em /mcp.
+"""API HTTP: login por papel, dados do painel, prompts/perfis, assistente e MCP em /mcp.
 
 Rodar: uv run uvicorn api.main:app --reload
 """
@@ -6,7 +6,7 @@ Rodar: uv run uvicorn api.main:app --reload
 import hmac
 from typing import Any
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from mcp.server.transport_security import TransportSecuritySettings
 from pydantic import BaseModel
@@ -14,10 +14,10 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
-from api import assistant, db
+from api import assistant, auth, db
 from api.mcp_server import mcp
 
-api = FastAPI(title="RavenStack Churn API", version="0.1.0")
+api = FastAPI(title="RavenStack Churn API", version="0.2.0")
 api.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in db.settings.cors_origins.split(",")],
@@ -25,18 +25,66 @@ api.add_middleware(
     allow_headers=["*"],
 )
 
+# Quais abas liberam quais views. A visão geral é de todos; "ia" só lê prompts/perfis.
+TAB_VIEWS = {
+    "geral": {
+        "kpi_overview",
+        "tenure_hazard",
+        "cohort",
+        "churn_type",
+        "persona_summary",
+        "persona_catalog",
+        "revenue_monthly",
+        "loss_concentration",
+        "support_health",
+        "silent_churn",
+        "usage_quarterly",
+        "churn_by_segment",
+        "reactivation",
+        "feature_health",
+    },
+    "risco": {"risk_queue", "account_360", "churn_reason_vs_behavior"},
+    "dados": {
+        "ingestion_runs",
+        "ingestion_steps",
+        "dq_results",
+        "catalog_tables",
+        "catalog_columns",
+    },
+    "ia": {"prompts", "profiles"},
+}
 
-def _check_access(code: str | None) -> None:
-    expected = db.settings.access_code
-    if expected is None:
-        return
-    if code is None or not hmac.compare_digest(code, expected.get_secret_value()):
-        raise HTTPException(status_code=401, detail="código de acesso inválido")
+User = dict[str, Any]
+
+
+def allowed_views(user: User) -> set[str]:
+    return set().union(*(TAB_VIEWS.get(t, set()) for t in user["tabs"]))
+
+
+def require_edit(user: User = Depends(auth.current_user)) -> User:
+    if not user["can_edit"]:
+        raise HTTPException(status_code=403, detail="seu papel não pode editar prompts e perfis")
+    return user
+
+
+class Login(BaseModel):
+    email: str
+    code: str
+
+
+@api.post("/auth/login")
+def login(body: Login) -> dict[str, Any]:
+    return auth.login(body.email, body.code)
+
+
+@api.get("/me")
+def me(user: User = Depends(auth.current_user)) -> User:
+    return user
 
 
 @api.get("/health")
 def health() -> dict[str, Any]:
-    row = db.rows("select as_of_date from api.kpi_overview")
+    row = db.rows("select gold.as_of_date() as as_of_date")
     return {
         "status": "ok",
         "as_of_date": str(row[0]["as_of_date"]) if row else None,
@@ -47,13 +95,21 @@ def health() -> dict[str, Any]:
 
 @api.get("/data/{view}")
 def data(
-    view: str, account_id: str | None = None, run_id: str | None = None, limit: int = 2000
+    view: str,
+    account_id: str | None = None,
+    run_id: str | None = None,
+    limit: int = 2000,
+    user: User = Depends(auth.current_user),
 ) -> list[dict[str, Any]]:
+    if view not in allowed_views(user):
+        raise HTTPException(status_code=403, detail=f"seu papel não acessa {view}")
     where = {k: v for k, v in {"account_id": account_id, "run_id": run_id}.items() if v}
-    try:
-        return db.read_view(view, where, min(limit, 5000))
-    except KeyError as exc:
-        raise HTTPException(status_code=404, detail=f"view desconhecida: {view}") from exc
+    rows = db.read_view(view, where, min(limit, 5000))
+    if view == "prompts" and user["role"] not in ("admin", "executivo"):
+        rows = [r for r in rows if r["profile_slug"] == user["profile_slug"]]
+    if view == "profiles" and user["role"] not in ("admin", "executivo"):
+        rows = [r for r in rows if r["slug"] == user["profile_slug"]]
+    return rows
 
 
 class TextUpdate(BaseModel):
@@ -62,9 +118,8 @@ class TextUpdate(BaseModel):
 
 @api.put("/prompts/{slug}")
 def update_prompt(
-    slug: str, body: TextUpdate, x_access_code: str | None = Header(None)
+    slug: str, body: TextUpdate, user: User = Depends(require_edit)
 ) -> dict[str, str]:
-    _check_access(x_access_code)
     db.execute(
         "update app.prompt_templates set body = %s, version = version + 1, updated_at = now() where slug = %s",
         (body.text, slug),
@@ -73,8 +128,7 @@ def update_prompt(
 
 
 @api.post("/prompts/{slug}/restore")
-def restore_prompt(slug: str, x_access_code: str | None = Header(None)) -> dict[str, str]:
-    _check_access(x_access_code)
+def restore_prompt(slug: str, user: User = Depends(require_edit)) -> dict[str, str]:
     db.execute(
         "update app.prompt_templates set body = default_body, version = version + 1, updated_at = now() "
         "where slug = %s",
@@ -85,9 +139,8 @@ def restore_prompt(slug: str, x_access_code: str | None = Header(None)) -> dict[
 
 @api.put("/profiles/{slug}")
 def update_profile(
-    slug: str, body: TextUpdate, x_access_code: str | None = Header(None)
+    slug: str, body: TextUpdate, user: User = Depends(require_edit)
 ) -> dict[str, str]:
-    _check_access(x_access_code)
     db.execute(
         "update app.analysis_profiles set instructions = %s, version = version + 1, updated_at = now() "
         "where slug = %s",
@@ -97,8 +150,7 @@ def update_profile(
 
 
 @api.post("/profiles/{slug}/restore")
-def restore_profile(slug: str, x_access_code: str | None = Header(None)) -> dict[str, str]:
-    _check_access(x_access_code)
+def restore_profile(slug: str, user: User = Depends(require_edit)) -> dict[str, str]:
     db.execute(
         "update app.analysis_profiles set instructions = default_instructions, version = version + 1, "
         "updated_at = now() where slug = %s",
@@ -114,12 +166,15 @@ class Question(BaseModel):
 
 
 @api.post("/assistant")
-def ask(q: Question, x_access_code: str | None = Header(None)) -> dict[str, Any]:
-    _check_access(x_access_code)
+def ask(q: Question, user: User = Depends(auth.current_user)) -> dict[str, Any]:
+    if "ia" not in user["tabs"]:
+        raise HTTPException(status_code=403, detail="seu papel não usa o assistente")
     if len(q.question) > 4000:
         raise HTTPException(status_code=400, detail="pergunta longa demais")
+    # Cada área analisa com a própria lente; admin e CEO podem escolher qualquer perfil.
+    profile = q.profile_slug if user["role"] in ("admin", "executivo") else user["profile_slug"]
     try:
-        return assistant.ask(q.question, q.profile_slug, q.prompt_slug)
+        return assistant.ask(q.question, profile, q.prompt_slug, user["email"])
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
