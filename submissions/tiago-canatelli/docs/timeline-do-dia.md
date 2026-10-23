@@ -49,6 +49,7 @@ gantt
 | 12:36 | **Deploy no Render**, relatório do CEO, README | Impactos recalculados no banco (estavam estimados) | `fa033ff` |
 | 12:44 | MCP testado em produção + guia para outras IAs | 5 tools, 18 prompts, 401 sem token | `9b38cc2` |
 | 12:47–12:55 | **CI/CD pelo git** | Filtro por `paths` não funcionou; `ignoredPaths` funcionou: docs não redeploya, API redeploya (`/health` mostra o commit) | `85ccf9c`, `83502de` |
+| 13:43–14:16 | **Ingestão contínua em produção** | Botão no painel + `POST /ingest`; os cron jobs do Render são pagos, então o agendador é o pg_cron do Supabase chamando a API a cada 15 min; o teste de reprocessamento revelou uma FK do gold que bloqueava o silver (corrigida) | `671b924`, `66926a1`, `d9832bb` |
 | 12:59 | DER, dicionário de dados e esta timeline | Dicionário gerado do catálogo (41 tabelas, 462 colunas); Mermaid validado | — |
 
 ## O que ficou de fora (cortes deliberados)

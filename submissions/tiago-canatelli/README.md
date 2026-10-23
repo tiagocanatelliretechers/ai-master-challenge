@@ -24,7 +24,7 @@ Montei um data lake no Supabase (raw → bronze → silver → gold) alimentado 
 | **Painel** com login por área (CEO, Financeiro, CS, Suporte, Produto, Marketing, Vendas, Dados + admin) | https://ravenstack-dashboard.onrender.com |
 | API, assistente de IA (Claude) e **MCP** para Claude e outras IAs | https://ravenstack-api.onrender.com · `/mcp` — guia de conexão em [`docs/mcp.md`](docs/mcp.md) |
 | Data lake (migrations versionadas) | [`supabase/migrations/`](supabase/migrations/) |
-| Pipeline de ingestão (Kaggle MCP → Supabase) | [`packages/ravenlake/`](packages/ravenlake/) |
+| Pipeline de ingestão (Kaggle MCP → Supabase) | [`packages/ravenlake/`](packages/ravenlake/) — **roda sozinha no Render a cada 15 min** (pg_cron do Supabase → `POST /ingest/cron`) e pelo botão "Executar ingestão agora" no painel (admin/Dados), com progresso ao vivo |
 | Qualidade de dados | [`docs/data-quality.md`](docs/data-quality.md) |
 | **Modelo de dados (DER) e como resolvemos o lake** | [`docs/modelo-de-dados.md`](docs/modelo-de-dados.md) · dicionário: [`docs/dicionario-de-dados.md`](docs/dicionario-de-dados.md) |
 | **Linha do tempo do dia** (passos reais, pelos commits) | [`docs/timeline-do-dia.md`](docs/timeline-do-dia.md) |
@@ -75,6 +75,7 @@ Os impactos usam 3 cenários de salvamento (10, 20 e 30%) e não se somam, porqu
   - análise 360 com várias lentes ao mesmo tempo;
   - painéis dedicados por área e por persona (cada área usa a visão geral + o assistente com a sua lente);
   - resposta em streaming.
+- **Ingestão "em tempo real":** a fonte (Kaggle) é estática, na versão 1 desde 2025-07. O agendador verifica a versão a cada 15 min e registra `skipped` quando nada mudou. Com "reprocessar tudo" no painel, o pipeline completo roda ao vivo. Os cron jobs do Render são pagos (a conta bloqueou serviços pagos), por isso o agendador fica no Supabase.
 - O plano gratuito do Render dorme quando fica parado: o primeiro acesso pode levar cerca de 1 minuto.
 
 ---

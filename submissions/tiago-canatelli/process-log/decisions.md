@@ -80,3 +80,9 @@
 - **Filtros de build:** a API ignora docs, process-log, report, analysis, scripts, supabase, dashboard e .claude (`ignoredPaths`, caminhos a partir da raiz do repositório). O dashboard só redeploya quando muda `submissions/tiago-canatelli/apps/dashboard/**`.
 - **Motivo:** antes dos filtros, cada commit de documentação redeployava a API (3 deploys inúteis no plano gratuito).
 - **Prova:** o push `1b110ce` (só documentação) não disparou deploy. O push `85ccf9c` (API) disparou, e o `/health` de produção passou a mostrar `commit: 85ccf9c`. As tentativas com `paths` (relativos ao rootDir e depois à raiz) não filtraram a API e foram registradas no journal.
+
+### Ingestão contínua: pg_cron do Supabase → API no Render
+- **Pedido:** deixar a ingestão rodando no Render, alimentando o banco, e ver isso no painel.
+- **Opções:** cron job do Render (pago, recusado: "new paid services not allowed") · GitHub Actions (mexeria fora da pasta da submissão) · **pg_cron + pg_net do Supabase chamando a API**.
+- **Escolha:** a terceira. Custo zero; a chamada a cada 15 min também mantém o serviço gratuito do Render acordado. O token fica no Supabase Vault.
+- **Prova:** o run agendado saiu como `trigger = cron` (`skipped`: Kaggle sem versão nova), e o `cron.job_run_details` mostrou `succeeded` às 14:15. A ingestão forçada pelo endpoint rodou completa (silver, DQ, gold com 432 contas, catálogo).

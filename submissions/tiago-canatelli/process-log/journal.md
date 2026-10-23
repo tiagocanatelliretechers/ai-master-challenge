@@ -116,3 +116,17 @@
 
 - **Ajuste:** filtro da API trocado para `ignoredPaths` (docs, process-log, report, analysis, scripts, supabase, dashboard), nos dois formatos de caminho.
 - **Resultado:** o push `1b110ce` (docs) não fez deploy; o `85ccf9c` (API) fez, e a produção mostra `commit: 85ccf9c` no `/health`.
+
+## 2026-10-23 13:40–14:20 · Ingestão contínua no Render
+- **Pedi à IA:** deixar a ingestão executando no Render, alimentando o banco, visível no painel.
+- **A IA fez:**
+  - `ravenlake` ganhou modo `--force` e um `runner` compartilhado;
+  - API: `POST /ingest` (admin/Dados) e `POST /ingest/cron`, ambos em segundo plano com trava contra execuções simultâneas;
+  - painel: botão "Executar ingestão agora", atualização a cada 3 s durante a execução e runs marcados como agendado ou manual;
+  - agendador: pg_cron + pg_net a cada 15 min, com o token no Vault.
+- **Verifiquei / ajustei:**
+  - o job avulso e o cron do Render foram recusados por serem pagos, daí a troca de agendador;
+  - o teste de reprocessamento revelou a FK `gold.risk_scores` → `silver.accounts`, que bloqueava o `TRUNCATE` (corrigida);
+  - o primeiro disparo deu 401 porque o processo no ar tinha subido antes da variável nova; um redeploy resolveu;
+  - o trigger saía como `manual` por uma substituição de texto que não aconteceu (corrigido).
+- **Resultado:** o agendador roda sozinho (`succeeded` às 14:15) e os runs `cron` aparecem no painel.
