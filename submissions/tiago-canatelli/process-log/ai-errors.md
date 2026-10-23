@@ -58,3 +58,9 @@ _(registrar em tempo real — skill `process-log-keeper`)_
 ### Ambiguidade de coluna em JOIN USING
 - **O que a IA fez:** `join persona_catalog using (persona)` com duas tabelas à esquerda que tinham a coluna `persona`. A migration falhou e nada foi aplicado.
 - **Correção:** troquei por `on pc.persona = p.persona`.
+
+### Horários inventados no journal e na timeline
+- **O que a IA fez:** escreveu os horários das fases F2–F4 por estimativa (ex.: "F3 10:55–12:10"), sem consultar o relógio.
+- **Como percebi:** ao planejar o prazo final com o Tiago, conferi `date` e `git log`: eram 11:23, e a F3 tinha levado 16 minutos, não 1h15.
+- **Correção:** a timeline e o journal foram reescritos com os timestamps reais dos commits.
+- **Lição:** um process log só vale com dados verificáveis. A regra "nunca inventar" vale também para metadados.

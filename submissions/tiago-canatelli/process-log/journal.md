@@ -19,7 +19,7 @@
 - **Decisão:** o pipeline usa o Kaggle MCP como fonte, com checagem de versão + sha256 (ver `decisions.md`).
 - **sha256:** accounts `348d8ba9…`, churn_events `6391c41d…`, feature_usage `c081da2b…`, subscriptions `dcf1d93c…`, support_tickets `ba000695…`.
 
-## 2026-10-23 08:50–09:25 · F1 · Revisão das skills uma a uma
+## 2026-10-23 08:35–09:20 · F1 · Revisão das skills uma a uma
 - **Pedi à IA:** revisar cada skill comigo antes de começar a execução.
 - **A IA fez:** antes de apresentar cada skill, conferiu as regras nos CSVs: 77% do uso tem data anterior ao início da assinatura; as três definições de churn discordam; churn e assinaturas não se cruzam (só 6 de 600 churns coincidem com o fim de uma assinatura); `feedback_text` tem só 4 textos distintos; o churn por trimestre vai de 6 → 251.
 - **Verifiquei / ajustei:**
@@ -30,7 +30,7 @@
 - **Resultado:** 5 skills revisadas. Commits `3701de5`, `9ecaebe`, `f4557e8`, `4da3719`, `d0defc4`.
 - **Próximo:** F2 — migrations e ingestão no Supabase.
 
-## 2026-10-23 09:40–10:20 · F2 · Migrations e pipeline
+## 2026-10-23 09:30–10:18 · F2 · Migrations e pipeline
 - **Pedi à IA:** começar a F2 com migrations e ingestão no Supabase G4-Analysys.
 - **A IA fez:**
   - inspecionou os formatos reais dos CSVs;
@@ -45,7 +45,7 @@
 - **Resultado:** `ravenlake version` → 1 (Kaggle MCP ok); lint, mypy e testes passando; advisors só com INFO de RLS sem policy, o que é intencional porque o acesso virá pela camada `api`.
 - **Próximo:** credenciais no `.env` → `ravenlake ingest`.
 
-## 2026-10-23 10:30–10:50 · F2 · Primeira ingestão real
+## 2026-10-23 10:20–10:43 · F2 · Primeira ingestão real
 - **Pedi à IA:** rodar a ingestão completa depois de eu preencher o `.env`.
 - **A IA fez:**
   - conferiu o `.env` sem expor segredos e pegou que a `DATABASE_URL` estava com a URL HTTP do projeto em vez da connection string do Postgres;
@@ -56,7 +56,7 @@
 - **Resultado:** `docs/data-quality.md`. Run `3f3c24da` (success) e `f0133317` (skipped).
 - **Próximo:** F3 — diagnóstico (hipóteses) sobre o silver.
 
-## 2026-10-23 10:55–12:10 · F3 · Diagnóstico
+## 2026-10-23 10:43–10:59 · F3 · Diagnóstico
 - **Pedi à IA:** testar as hipóteses sobre o silver.
 - **A IA fez:**
   - carregou o silver em pandas e testou H0–H7;
@@ -71,7 +71,7 @@
 - **Resultado:** causa raiz em `process-log/hypotheses.md` (síntese) e 432 contas ativas com MRR em risco estimado em US$ 320 mil em 90 dias.
 - **Próximo:** F4 — gold (views de KPI) + score de risco em `gold.risk_scores`.
 
-## 2026-10-23 12:15–13:25 · F4 · Camada gold e score de risco
+## 2026-10-23 10:59–11:14 · F4 · Camada gold e score de risco
 - **Pedi à IA:** views gold de KPI e `gold.risk_scores` no Supabase.
 - **A IA fez:** 4 migrations de gold.
   - **Regras de base em SQL:** `as_of_date`, `is_churned_on` e `subscription_at`.
