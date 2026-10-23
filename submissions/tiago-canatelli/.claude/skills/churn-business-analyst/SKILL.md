@@ -97,7 +97,7 @@ Decididas (detalhes na skill `churn-data-scientist`, "Decisões tomadas"):
 - **MRR perdido** = MRR da conta na data do churn.
 
 Pendentes (validar no silver, registrar a escolha em `decisions.md`):
-- **MRR vigente** com assinaturas sobrepostas: (a) soma das assinaturas ativas na data × (b) assinatura ativa mais recente. Critério: ARPA plausível por plano e coerência com `seats`.
+- ~~MRR vigente~~ **decidido:** assinatura ativa mais recente (ver skill `churn-data-scientist`).
 - **Trial:** reportar taxas **com e sem** trial até decidir; recomendação inicial: trial fora das taxas de churn de clientes pagantes, com KPI próprio de conversão.
 
 Limitação a explicar ao CEO: churn e assinaturas não conversam nos dados (só 6 de 600 churns coincidem com o fim de uma assinatura). KPIs de receita (GRR, NRR, expansion/contraction) vêm com essa ressalva.

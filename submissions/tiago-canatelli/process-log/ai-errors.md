@@ -34,3 +34,13 @@ _(registrar em tempo real — skill `process-log-keeper`)_
 - **O que a IA fez:** usou `git add -f` na pasta da submissão. O `-f` ignora também o `.gitignore` interno, e entraram `.venv`, `.mypy_cache` e outros caches.
 - **Como percebi:** pela lista do `git status` logo após o commit.
 - **Correção:** o commit ainda era local; foi refeito com `--amend` sem esses arquivos. Criei `scripts/stage.sh`, que faz `git add -f` e depois remove o que o `.gitignore` da pasta ignora, e a skill de engenharia agora proíbe `git add -f` direto.
+
+### Quase chamei de achado um artefato de "plano atual"
+- **O que a IA fez:** o corte de churn por `plan_now` (plano da assinatura mais recente) deu p < 0,001, com Basic em 13,5 contra Pro em 9,2 por 100 contas-mês, e parecia um achado forte.
+- **Como percebi:** a assinatura mais recente pode ter começado **depois** do churn (reativação). Refiz a conta pelo plano na data de cada churn contra o mix de assinaturas ativas no trimestre, e a diferença sumiu.
+- **Correção:** o achado foi descartado e o caso ficou registrado em `decisions.md`.
+- **Lição:** atributo medido depois do desfecho não explica o desfecho.
+
+### Nome de variável sombreando função do statsmodels
+- **O que a IA fez:** chamou o DataFrame de churn de `C`, o que quebrou o `C(...)` das fórmulas do statsmodels.
+- **Correção:** renomeei para `churn` no script final.

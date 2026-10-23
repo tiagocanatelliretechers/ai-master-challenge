@@ -50,7 +50,7 @@ Edge cases declarados pelo autor (tratar explicitamente, nunca descobrir por aca
 
 - **Churn = evento em `churn_events`** (decidido em 2026-10-23). Uma conta pode churnar várias vezes; `churn_date` é a data do evento. `accounts.churn_flag` e `subscriptions.churn_flag` são tratados como **achados de qualidade**, não como definição.
 - **Conta na base no início do mês M:** `signup_date` < início de M **e** (nenhum churn antes de M **ou** existe assinatura iniciada depois do último churn anterior a M).
-- **MRR da conta numa data D:** a validar no silver — comparar (a) soma das assinaturas ativas em D e (b) assinatura ativa mais recente; escolher a que gera ARPA plausível por plano e registrar em `decisions.md`.
+- **MRR da conta numa data D (decidido em F3):** MRR da **assinatura ativa mais recente** em D (fallback: a última iniciada antes de D). Motivo: o preço por licença é fixo (Basic 19, Pro 49, Enterprise 199 US$/licença; trial = 0); somar as assinaturas abertas daria mediana de 225 licenças/conta contra 15 no cadastro. MRR vigente total em 31/12/2024: US$ 1,04 mi em 432 contas ativas.
 - **MRR perdido no churn:** MRR da conta na `churn_date` (regra acima).
 
 Regras e armadilhas:

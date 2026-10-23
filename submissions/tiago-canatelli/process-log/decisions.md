@@ -48,3 +48,12 @@
 - **Escolha:** um ambiente só (`G4-Analysys`) para desenvolvimento, testes e produção; CLI do Supabase só para o projeto remoto (`link`, `db push --linked`, `gen types --project-id`).
 - **Como os testes não sujam os dados:** transação com rollback por padrão; testes com commit usam `run_id` de teste e limpeza automática; testes de KPI só leem.
 - **Risco aceito:** não há banco para ensaiar migrations → migration destrutiva só com confirmação explícita. O plano free pausa o projeto após inatividade — reativar antes de rodar.
+
+### MRR vigente = assinatura ativa mais recente
+- **Opções:** somar todas as assinaturas ativas × usar a mais recente.
+- **Escolha:** a mais recente.
+- **Motivo:** o preço por licença é fixo (19 / 49 / 199 US$). Somando, a mediana seria 225 licenças por conta, contra 15 no cadastro, o que é implausível. Com a mais recente, a mediana é 25 licenças e o MRR vigente é US$ 1,04 mi.
+
+### Não recomendar ação por canal nem por indústria
+- **Contexto:** `organic` apareceu com p = 0,025 e o "plano atual" com p < 0,001.
+- **Escolha:** descartar os dois. Canal não sobrevive à correção de Bonferroni (6 testes). O "plano atual" é a assinatura mais recente, muitas vezes posterior ao churn, ou seja, causalidade reversa. Pelo plano **na data do churn**, o mix de churn (35/37/32%) é quase igual ao mix ativo (33/32/35%).

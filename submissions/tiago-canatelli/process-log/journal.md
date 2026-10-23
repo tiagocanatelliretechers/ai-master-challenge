@@ -55,3 +55,18 @@
 - **Verifiquei / ajustei:** os totais de controle batem com o CSV (MRR 11.338.747, uso 250.525, CSAT 4.678, refunds 8.652,25); o segundo run deu `skipped`, sem duplicar o bronze; os sha256 batem com os do download manual.
 - **Resultado:** `docs/data-quality.md`. Run `3f3c24da` (success) e `f0133317` (skipped).
 - **Próximo:** F3 — diagnóstico (hipóteses) sobre o silver.
+
+## 2026-10-23 10:55–12:10 · F3 · Diagnóstico
+- **Pedi à IA:** testar as hipóteses sobre o silver.
+- **A IA fez:**
+  - carregou o silver em pandas e testou H0–H7;
+  - criou a H8 a partir do que os dados mostraram (taxa por conta subindo sem explicação por segmento);
+  - separou os efeitos de calendário, tempo de casa e coorte (Poisson conta-mês + logit com controles);
+  - consolidou tudo em `analysis/diagnostico.py`, que gera `results/diagnostico.md`, `numbers.json` e `risk_accounts.csv`.
+- **Verifiquei / ajustei:**
+  - cobrei correção para múltiplas comparações;
+  - descartei o artefato do "plano atual";
+  - separei calendário de coorte antes de chamar de causa;
+  - deixei explícito que o mecanismo (onboarding) não está nos dados.
+- **Resultado:** causa raiz em `process-log/hypotheses.md` (síntese) e 432 contas ativas com MRR em risco estimado em US$ 320 mil em 90 dias.
+- **Próximo:** F4 — gold (views de KPI) + score de risco em `gold.risk_scores`.
