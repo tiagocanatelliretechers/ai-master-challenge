@@ -11,13 +11,18 @@ services:
     buildCommand: pip install uv && uv sync --frozen --package api --no-dev
     startCommand: uv run --no-sync --package api uvicorn api.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
-    buildFilter:
-      paths:  # relativos à raiz do repositório (testado: relativos ao rootDir não filtram)
-        - submissions/tiago-canatelli/apps/api/**
-        - submissions/tiago-canatelli/packages/**
-        - submissions/tiago-canatelli/pyproject.toml
-        - submissions/tiago-canatelli/uv.lock
-        - submissions/tiago-canatelli/.python-version
+    buildFilter:  # testado: só docs/process-log não redeploya; mudança em apps/api redeploya
+      ignoredPaths:
+        - submissions/tiago-canatelli/docs/**
+        - submissions/tiago-canatelli/process-log/**
+        - submissions/tiago-canatelli/report/**
+        - submissions/tiago-canatelli/analysis/**
+        - submissions/tiago-canatelli/README.md
+        - submissions/tiago-canatelli/render.yaml
+        - submissions/tiago-canatelli/supabase/**
+        - submissions/tiago-canatelli/scripts/**
+        - submissions/tiago-canatelli/apps/dashboard/**
+        - submissions/tiago-canatelli/.claude/**
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.8

@@ -77,6 +77,6 @@
 
 ### CI/CD: deploy automático pelo git com filtros por pasta
 - **Configuração no Render:** os dois serviços acompanham o fork, na branch `submission/tiago-canatelli`, com `autoDeploy: yes` (trigger: commit).
-- **Filtros de build:** a API só redeploya quando mudam `apps/api/**`, `packages/**`, `pyproject.toml`, `uv.lock` ou `.python-version`. O dashboard só redeploya quando muda `apps/dashboard/**` (o rootDir dele).
+- **Filtros de build:** a API ignora docs, process-log, report, analysis, scripts, supabase, dashboard e .claude (`ignoredPaths`, caminhos a partir da raiz do repositório). O dashboard só redeploya quando muda `submissions/tiago-canatelli/apps/dashboard/**`.
 - **Motivo:** antes dos filtros, cada commit de documentação redeployava a API (3 deploys inúteis no plano gratuito).
-- **Prova:** um push só de documentação não disparou deploy, e um push na API disparou (ver `journal.md`).
+- **Prova:** o push `1b110ce` (só documentação) não disparou deploy. O push `85ccf9c` (API) disparou, e o `/health` de produção passou a mostrar `commit: 85ccf9c`. As tentativas com `paths` (relativos ao rootDir e depois à raiz) não filtraram a API e foram registradas no journal.

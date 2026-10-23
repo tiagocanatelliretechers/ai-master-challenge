@@ -115,3 +115,4 @@
 - **Verifiquei / ajustei:** caminhos relativos ao `rootDir` não filtram, e os dois serviços redeployaram. Os caminhos relativos à raiz do repositório funcionam: o dashboard parou de redeployar por mudanças fora de `apps/dashboard`. O teste final da API é este próprio commit (só documentação).
 
 - **Ajuste:** filtro da API trocado para `ignoredPaths` (docs, process-log, report, analysis, scripts, supabase, dashboard), nos dois formatos de caminho.
+- **Resultado:** o push `1b110ce` (docs) não fez deploy; o `85ccf9c` (API) fez, e a produção mostra `commit: 85ccf9c` no `/health`.
