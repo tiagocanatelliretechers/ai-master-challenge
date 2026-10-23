@@ -13,3 +13,8 @@ _(registrar em tempo real — skill `process-log-keeper`)_
 - **Como percebi:** ao validar os KPIs nos CSVs — só existem 4 textos de feedback distintos em 452 preenchidos.
 - **Correção:** análise semântica descartada; H4 será testada com comportamento (uso, erros, tickets). RAG focado no conhecimento das análises.
 - **Lição:** checar o conteúdo antes de desenhar a solução — de novo.
+
+### Skill de engenharia desatualizada em relação ao próprio plano
+- **O que a IA fez:** a cada mudança de escopo (Render, multi-LLM, RAG, perfis) foi anexando seções na skill de engenharia sem reorganizar; ficaram tools com nomes diferentes do plano (`query_analytics` × `run_readonly_query`), dependências faltando (OpenAI, Gemini, cliente do Kaggle MCP), endpoint 360 sem regra de concorrência e auth assumindo o segredo JWT legado do Supabase.
+- **Como percebi:** na revisão da skill, lendo de ponta a ponta.
+- **Correção:** skill reescrita com rotas, tools únicas, dependências por pacote, pooler em modo transaction (sem prepared statements), JWT via JWKS, limites de custo e testes por camada.

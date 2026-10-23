@@ -188,7 +188,7 @@ Estrutura: `src/pages`, `src/components`, `src/lib/supabase.ts`, `src/hooks/use*
 
 ### 7.1 No painel (`apps/api`, endpoint `POST /assistant`)
 1. Painel envia `prompt_id`, `profile` (perfil de análise), variáveis e o texto (possivelmente editado), com o JWT do Supabase Auth (a API valida). As instruções do perfil entram no system prompt; o RAG filtra pelas fontes do perfil.
-2. API renderiza o prompt, recupera contexto no RAG (§7.5), chama o modelo escolhido (padrão Claude `claude-sonnet-5-5`) via camada multi-provedor (§7.3) com tools: `get_kpi`, `get_account_health`, `list_at_risk_accounts`, `churn_drivers`, `run_readonly_query`.
+2. API renderiza o prompt, recupera contexto no RAG (§7.5), chama o modelo escolhido (padrão Claude `claude-sonnet-5-5`) via camada multi-provedor (§7.3) com tools: `get_kpi`, `get_account_health`, `list_at_risk_accounts`, `revenue_at_risk`, `churn_drivers`, `query_analytics` (executa `api.run_readonly_query`), `search_knowledge`.
 3. Executa as tools via RPC `api.*` com role read-only; devolve o resultado ao modelo até a resposta final.
 4. Grava `app.ai_runs` e devolve a resposta em streaming (SSE) com as queries e os trechos usados.
 
@@ -316,7 +316,7 @@ Blueprint em `submissions/tiago-canatelli/render.yaml`, conectado ao fork no Git
 | Serviço | Tipo Render | `rootDir` | Build / start | Env vars |
 |---|---|---|---|---|
 | `ravenstack-dashboard` | static site | `apps/dashboard` | `npm ci && npm run build` → publica `dist`; rewrite `/* → /index.html` | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL` |
-| `ravenstack-api` | web service (Python) | raiz do monorepo | `uv sync --package api` → `uv run uvicorn api.main:app --host 0.0.0.0 --port $PORT`; health check `/health` | `ANALYST_RO_DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_JWT_SECRET`, `ANTHROPIC_API_KEY` (sync: false), `OPENAI_API_KEY`/`GOOGLE_API_KEY`/`OPENAI_COMPATIBLE_*`/`VOYAGE_API_KEY` (opcionais, sync: false), `MCP_TOKEN` (generateValue), `PYTHON_VERSION` |
+| `ravenstack-api` | web service (Python) | raiz do monorepo | `pip install uv && uv sync --frozen --package api` → `uv run uvicorn api.main:app --host 0.0.0.0 --port $PORT`; health check `/health` | `ANALYST_RO_DATABASE_URL`, `SUPABASE_URL` (JWKS para validar o JWT), `ANTHROPIC_API_KEY` (sync: false), `OPENAI_API_KEY`/`GOOGLE_API_KEY`/`OPENAI_COMPATIBLE_*`/`VOYAGE_API_KEY` (opcionais, sync: false), `MCP_TOKEN` (generateValue), `PYTHON_VERSION` |
 | `ravenstack-ingest` | cron job (opcional) | raiz do monorepo | `uv run ravenlake ingest` (diário; checa versão no Kaggle MCP) | `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
 
 - O banco continua no Supabase (`G4-Analysys`); o Render não hospeda Postgres.
