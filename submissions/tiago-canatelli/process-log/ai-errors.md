@@ -64,3 +64,8 @@ _(registrar em tempo real — skill `process-log-keeper`)_
 - **Como percebi:** ao planejar o prazo final com o Tiago, conferi `date` e `git log`: eram 11:23, e a F3 tinha levado 16 minutos, não 1h15.
 - **Correção:** a timeline e o journal foram reescritos com os timestamps reais dos commits.
 - **Lição:** um process log só vale com dados verificáveis. A regra "nunca inventar" vale também para metadados.
+
+### Impactos do relatório estimados em vez de consultados
+- **O que a IA fez:** o primeiro rascunho do relatório trazia o "MRR em risco por público" de memória (ex.: US$ 137 mil para contas novas).
+- **Como percebi:** conferindo cada número do relatório no banco antes de fechar.
+- **Correção:** recalculei em `api.risk_queue` (US$ 155 mil, 185 mil e 168 mil) e deixei explícito que os impactos não se somam.

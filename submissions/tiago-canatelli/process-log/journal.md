@@ -92,3 +92,19 @@
   - advisors só com INFO de RLS, como esperado;
   - MRR em risco de 90 dias: US$ 333 mil (35% nas 20 primeiras contas).
 - **Próximo:** F5 — camada `api`, painel React, assistente e MCP.
+
+## 2026-10-23 11:25–12:45 · F5/F6 · API, painel, usuários por área, deploy e relatório
+- **Pedi à IA:** fechar até 13–14h com deploy no Render. Depois pedi usuários com os perfis de cada área, a visão geral para todos e um admin com todas as visões.
+- **A IA fez:**
+  - **Banco:** camada `api` (views só leitura e `run_readonly_query` com bloqueios testados), prompts e perfis editáveis, e papéis e usuários (`app.roles`, `app.users`, código com hash PBKDF2).
+  - **API e assistente:** FastAPI com assistente Claude (`claude-opus-5-5`, tool use) e MCP em `/mcp` com bearer.
+  - **Painel React:** visão geral, fila de risco + 360, ingestão + qualidade + catálogo, e assistente. O login filtra as abas e a lente da IA pelo papel.
+  - **Deploy:** criação dos serviços pela API do Render, depois o relatório do CEO e o README.
+- **Verifiquei / ajustei:**
+  - assistente testado de ponta a ponta (24 s, 2 tools, números corretos);
+  - permissões testadas por papel (Suporte recebe 403 na fila de risco e nos dados e só vê o próprio prompt);
+  - em produção: health ok, e login, dados e MCP com 401 sem credencial;
+  - descobri que o host direto do Supabase é só IPv6 e que a senha tinha `#`, então gerei a URL do pooler com encoding;
+  - recusei usar a chave do Render colada no chat e pedi que fosse para o `.env`;
+  - recalculei no banco os impactos do relatório, que no rascunho eram estimados.
+- **Resultado:** https://ravenstack-dashboard.onrender.com e https://ravenstack-api.onrender.com.
