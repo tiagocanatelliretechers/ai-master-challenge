@@ -7,4 +7,4 @@ __pycache__/
 .pytest_cache/
 node_modules/
 dist/
-supabase/.temp/
+**/supabase/.temp/

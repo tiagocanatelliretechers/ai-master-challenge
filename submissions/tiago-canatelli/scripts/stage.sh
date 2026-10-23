@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # Adiciona a pasta da submissão ao git respeitando o .gitignore dela.
-# Necessário porque o .gitignore da raiz do repositório ignora submissions/ e `git add -f`
-# ignora também os .gitignore internos.
+# O .gitignore da raiz ignora submissions/; `git add -f` ignoraria também os .gitignore internos.
+# Por isso listamos só os arquivos não ignorados pelo .gitignore da pasta e adicionamos esses.
 set -euo pipefail
 root="$(git rev-parse --show-toplevel)"
 sub="submissions/tiago-canatelli"
 cd "$root"
-git add -f "$sub"
-git ls-files -ci --exclude-from="$sub/.gitignore" -- "$sub" | while IFS= read -r f; do
-  git rm --cached -q -- "$f"
-done
+new_files="$(git ls-files -o --exclude-from="$sub/.gitignore" -- "$sub")"
+if [ -n "$new_files" ]; then
+  printf "%s\n" "$new_files" | git add -f --pathspec-from-file=-
+fi
+git add -u -- "$sub"
 git status --short -- "$sub"
