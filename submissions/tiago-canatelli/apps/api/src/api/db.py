@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     anthropic_api_key: SecretStr | None = None
     auth_secret: SecretStr | None = None  # assina os tokens de login do painel
     mcp_token: SecretStr | None = None  # bearer do MCP remoto
+    cron_token: SecretStr | None = None  # chamado pelo pg_cron do Supabase (POST /ingest/cron)
     claude_model: str = "claude-opus-5-5"
     claude_effort: str = "medium"
     cors_origins: str = "*"

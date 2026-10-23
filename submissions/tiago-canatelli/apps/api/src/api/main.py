@@ -8,7 +8,7 @@ import os
 import threading
 from typing import Any
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from mcp.server.transport_security import TransportSecuritySettings
 from pydantic import BaseModel
@@ -189,7 +189,7 @@ class IngestRequest(BaseModel):
 _ingest_lock = threading.Lock()
 
 
-def _run_ingest_background(force: bool, email: str) -> None:
+def _run_ingest_background(force: bool, email: str, trigger: str = "manual") -> None:
     from ravenlake.runner import run_ingest
 
     try:
@@ -217,6 +217,27 @@ def start_ingest(body: IngestRequest, user: User = Depends(require_edit)) -> dic
         target=_run_ingest_background, args=(body.force, user["email"]), daemon=True
     ).start()
     return {"status": "iniciada", "mode": "reprocessar" if body.force else "verificar fonte"}
+
+
+@api.post("/ingest/cron")
+def cron_ingest(x_cron_token: str | None = Header(None)) -> dict[str, str]:
+    """Agendador: o pg_cron do Supabase chama a cada 15 min (verifica a versão no Kaggle)."""
+    token = db.settings.cron_token
+    if (
+        token is None
+        or x_cron_token is None
+        or not hmac.compare_digest(x_cron_token, token.get_secret_value())
+    ):
+        raise HTTPException(status_code=401, detail="token do agendador inválido")
+    running = db.rows(
+        "select 1 from ops.ingestion_runs where status = 'running' and started_at > now() - interval '15 minutes'"
+    )
+    if running or not _ingest_lock.acquire(blocking=False):
+        return {"status": "ignorada", "detail": "já existe uma ingestão em andamento"}
+    threading.Thread(
+        target=_run_ingest_background, args=(False, "pg_cron", "cron"), daemon=True
+    ).start()
+    return {"status": "iniciada", "mode": "verificar fonte"}
 
 
 # MCP (streamable HTTP) como app externo; a API FastAPI fica montada na raiz.

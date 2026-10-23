@@ -47,6 +47,7 @@ def main() -> None:
 
     auth_secret = ensure_secret(env, "AUTH_SECRET")
     mcp_token = ensure_secret(env, "MCP_TOKEN")
+    cron_token = ensure_secret(env, "CRON_TOKEN")
     api_env = [
         {"key": "PYTHON_VERSION", "value": "3.12.8"},
         {"key": "DATABASE_URL", "value": env["RENDER_DATABASE_URL"]},
@@ -55,6 +56,7 @@ def main() -> None:
         {"key": "MCP_TOKEN", "value": mcp_token},
         {"key": "CORS_ORIGINS", "value": "*"},
         # ingestão disparada pelo painel (POST /ingest) e pelo cron
+        {"key": "CRON_TOKEN", "value": cron_token},
         {"key": "SUPABASE_URL", "value": env["SUPABASE_URL"]},
         {"key": "SUPABASE_SECRET_KEY", "value": env["SUPABASE_SECRET_KEY"]},
     ]

@@ -40,6 +40,8 @@ services:
         value: https://hzerhfuwziundqqezgcm.supabase.co
       - key: SUPABASE_SECRET_KEY
         sync: false
+      - key: CRON_TOKEN          # o pg_cron do Supabase chama POST /ingest/cron (token no Vault)
+        sync: false
 
   - type: web
     name: ravenstack-dashboard

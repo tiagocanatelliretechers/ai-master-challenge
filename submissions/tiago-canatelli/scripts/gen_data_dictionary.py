@@ -42,12 +42,26 @@ lines = [
 ]
 for schema, title in LAYERS:
     names = [t for t in tables if t[0] == schema]
-    lines.append(f"- **{title}:** " + ", ".join(f"[`{schema}.{t[1]}`](#{schema}{t[1].replace('_', '')})" for t in names))
+    lines.append(
+        f"- **{title}:** "
+        + ", ".join(f"[`{schema}.{t[1]}`](#{schema}{t[1].replace('_', '')})" for t in names)
+    )
 for schema, title in LAYERS:
     lines += ["", f"## {title}"]
     for s, t, desc, n, ncols in [x for x in tables if x[0] == schema]:
-        lines += ["", f'<a id="{s}{t.replace("_", "")}"></a>', f"### `{s}.{t}`", "", f"{desc or '—'}  ", f"*{n:,} linhas · {ncols} colunas*".replace(",", "."), ""]
-        lines += ["| Coluna | Tipo | Chave | % nulos | Distintos | Descrição |", "|---|---|---|---|---|---|"]
+        lines += [
+            "",
+            f'<a id="{s}{t.replace("_", "")}"></a>',
+            f"### `{s}.{t}`",
+            "",
+            f"{desc or '—'}  ",
+            f"*{n:,} linhas · {ncols} colunas*".replace(",", "."),
+            "",
+        ]
+        lines += [
+            "| Coluna | Tipo | Chave | % nulos | Distintos | Descrição |",
+            "|---|---|---|---|---|---|",
+        ]
         for cs, ct, name, dtype, key, nulls, distinct, cdesc in cols:
             if (cs, ct) != (s, t):
                 continue
