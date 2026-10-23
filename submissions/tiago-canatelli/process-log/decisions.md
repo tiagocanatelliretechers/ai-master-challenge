@@ -36,3 +36,9 @@
 - **Escolha (confirmada pelo Tiago):** `churn_events`; churn é evento recorrente, com reativação.
 - **Motivo:** as três fontes discordam (277 contas com evento e flag `False`; 35 com flag `True` sem evento; só 6 de 600 churns coincidem com fim de assinatura). Os eventos têm data, motivo e refund — é a única fonte que permite análise temporal.
 - **Consequência:** KPIs de receita dependem de uma regra de MRR vigente ainda a validar; flags viram achado de qualidade no relatório.
+
+### Perfis de análise por área, análise 360 e três camadas de painel
+- **Pedido:** skills e RAGs por perfil para análise 360, cobrindo todas as áreas, com perfis padrão personalizáveis; painéis por persona de cliente, por persona analista e um geral.
+- **Escolhas:** 8 perfis de fábrica (Executivo, Financeiro, CS, Suporte, Produto, Marketing, Vendas, Dados) em arquivos .md no formato SKILL.md, carregados em `app.analysis_profiles` e editáveis/versionáveis no painel; RAG por perfil via `profile_slugs`; endpoint 360 que roda as lentes em paralelo e sintetiza concordâncias e **discordâncias**; 7 personas de cliente por regra explícita, validadas contra clusterização.
+- **Também aceito:** KPIs de concentração de perda e intervalo até reativação; taxa de salvamento em 3 cenários (10/20/30%).
+- **Separação importante:** persona analista (quem pergunta) ≠ persona de cliente (sobre quem).

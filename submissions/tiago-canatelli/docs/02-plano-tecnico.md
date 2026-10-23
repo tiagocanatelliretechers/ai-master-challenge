@@ -62,13 +62,18 @@ Princípio: **a lógica de negócio vive no Postgres** (views e funções em `go
 
 | Objeto | Tipo | Grão | Conteúdo |
 |---|---|---|---|
-| `gold.dim_account` | view | conta | atributos + segmento (plano, indústria, país, canal, trial, faixa de MRR, tempo de casa) |
+| `gold.dim_account` | view | conta | atributos + segmento (plano, indústria, país, canal, trial, faixa de MRR, faixa de licenças, tempo de casa, reincidência) |
+| `gold.dim_customer_persona` | view | conta | persona de cliente por regra versionada (skill de negócio §3.2) |
 | `gold.fct_mrr_monthly` | mat. view | conta × mês | MRR início/fim, new, expansion, contraction, churned |
 | `gold.kpi_revenue_monthly` | view | mês | MRR, ARR, logo churn %, gross MRR churn %, GRR, NRR, ARPA |
 | `gold.kpi_churn_by_segment` | view | segmento | contas, churns, logo churn %, MRR perdido, % do MRR perdido total |
 | `gold.kpi_usage_segment_monthly` | mat. view | segmento × mês | uso total, **uso por conta ativa**, contas ativas, erro %, uso beta % |
 | `gold.kpi_feature_health` | view | feature | adoção, duração, taxa de erro, churn dos usuários vs não usuários |
 | `gold.kpi_support_health` | view | segmento × status (ativo/churn) | tickets/conta, FRT, resolução, CSAT médio, **taxa de resposta CSAT**, % escalado |
+| `gold.kpi_loss_concentration` | view | período | % do MRR perdido nos 10% maiores churns |
+| `gold.kpi_reactivation` | view | segmento | taxa de reativação, intervalo até reativação (mediana, p25, p75) |
+| `gold.kpi_trial_conversion` | view | coorte | conversão de trial |
+| `gold.kpi_persona_summary` | view | persona × mês | contas, MRR, churn, MRR perdido, MRR em risco vs média |
 | `gold.churn_reason_vs_behavior` | view | evento de churn | motivo declarado, refund, Δ uso 90→30d, erros, tickets e CSAT antes do churn |
 | `gold.account_360` | mat. view | conta | tudo acima por conta + flags de sinal de alerta |
 | `gold.risk_scores` | tabela | conta ativa × data | probabilidade, top 3 drivers, MRR em risco, ação sugerida, versão do modelo |
@@ -97,8 +102,11 @@ Princípio: **a lógica de negócio vive no Postgres** (views e funções em `go
 | `app.prompt_templates` | `id`, `slug`, `title`, `category` (CEO/CS/Produto/Dados), `description`, `body` (com `{{variaveis}}`), `variables jsonb` (nome, tipo, default), `output_format`, `is_default`, `current_version`, `updated_at`, `updated_by` |
 | `app.prompt_versions` | `prompt_id`, `version`, `body`, `variables`, `created_at`, `created_by` — histórico; permite restaurar o padrão |
 | `app.ai_runs` | `id`, `prompt_id`, `version`, `rendered_prompt`, `provider`, `model`, `tool_calls jsonb` (queries executadas), `retrieved_chunks jsonb` (fontes do RAG), `answer`, `tokens`, `latency_ms`, `feedback` (👍/👎), `created_at` — auditoria e evidência para o process log |
+| `app.analysis_profiles` | `id`, `slug`, `name`, `area`, `question`, `instructions`, `kpis text[]`, `rag_sources text[]`, `default_prompts text[]`, `tone`, `is_builtin`, `current_version`, `enabled` — perfis de análise por área (skill de negócio §1) |
+| `app.profile_versions` | `profile_id`, `version`, conteúdo completo, `created_by`, `created_at` — histórico; "restaurar padrão" recarrega o arquivo de fábrica |
+| `app.knowledge_documents` | `id`, `title`, `profile_slugs text[]` (vazio = comum), `storage_path`, `mime`, `status` (pending/indexed/failed), `uploaded_by` — documentos anexados por área (playbooks, políticas) |
 | `app.llm_models` | `provider` (anthropic/openai/google/openai_compatible), `model`, `label`, `enabled`, `is_default`, `supports_tools`, `context_window`, `cost_in/out por 1M tokens` — registro do que aparece no seletor do painel (chaves **não** ficam aqui) |
-| `app.knowledge_chunks` | `id`, `source_type` (hypothesis/finding/kpi_definition/catalog/data_quality/report/churn_feedback/ticket_summary), `source_ref`, `title`, `content`, `metadata jsonb` (segmento, conta, período, camada, veredito), `embedding vector`, `tsv tsvector`, `content_hash`, `embedding_model`, `updated_at` — base do RAG |
+| `app.knowledge_chunks` | `id`, `source_type` (hypothesis/finding/kpi_definition/catalog/data_quality/report/churn_feedback/ticket_summary), `source_ref`, `title`, `content`, `metadata jsonb` (segmento, conta, período, camada, veredito), `embedding vector`, `tsv tsvector`, `content_hash`, `embedding_model`, `profile_slugs text[]` (vazio = conhecimento comum), `updated_at` — base do RAG |
 
 Prompts semente (exemplos): "Por que o churn subiu em {{periodo}}?", "A satisfação está mesmo ok?", "O uso cresceu para todos os segmentos?", "Quais contas o CS deve ligar esta semana?", "Explique o risco da conta {{account_id}}", "Quanto MRR recuperamos se {{acao}}?".
 
@@ -167,6 +175,10 @@ Páginas:
 | `/contas/:id` | CS | Visão 360: linha do tempo de assinatura, uso, tickets, score |
 | `/assistente` | Todos | Escolhe um prompt pronto, preenche variáveis, edita o texto antes de enviar, vê resposta com "Por quê" e as queries usadas |
 | `/prompts` | Todos | Biblioteca de prompts: criar, editar, versionar, restaurar padrão |
+| `/` | Todos | **Painel geral**: 4 KPIs, 3 gráficos do paradoxo, MRR em risco, 3 ações; atalhos para áreas e personas |
+| `/area/:slug` | Cada área | **Painel por área** (Executivo, Financeiro, CS, Suporte, Produto, Marketing, Vendas, Dados): pergunta central, KPIs do perfil, gráficos, "perguntar ao analista da área" |
+| `/persona/:slug` | Todos | **Painel por persona de cliente**: tamanho, churn e MRR perdido vs média, sinais antes do churn, contas em risco, ficha da persona |
+| `/perfis` | Todos | Perfis de análise: ver, personalizar, versionar, restaurar padrão, criar novo, anexar documentos à base do perfil |
 | `/conectar` | Todos | Como conectar o MCP no Claude, ChatGPT, Cursor, Gemini CLI etc.; testar conexão; lista de tools e prompts |
 | `/configuracoes/modelos` | Admin | Provedores e modelos habilitados, modelo padrão, status de cada chave (configurada ou não — o valor nunca aparece) |
 
@@ -175,17 +187,25 @@ Estrutura: `src/pages`, `src/components`, `src/lib/supabase.ts`, `src/hooks/use*
 ## 7. Assistente de IA
 
 ### 7.1 No painel (`apps/api`, endpoint `POST /assistant`)
-1. Painel envia `prompt_id`, variáveis e o texto (possivelmente editado), com o JWT do Supabase Auth (a API valida).
+1. Painel envia `prompt_id`, `profile` (perfil de análise), variáveis e o texto (possivelmente editado), com o JWT do Supabase Auth (a API valida). As instruções do perfil entram no system prompt; o RAG filtra pelas fontes do perfil.
 2. API renderiza o prompt, recupera contexto no RAG (§7.5), chama o modelo escolhido (padrão Claude `claude-sonnet-5-5`) via camada multi-provedor (§7.3) com tools: `get_kpi`, `get_account_health`, `list_at_risk_accounts`, `churn_drivers`, `run_readonly_query`.
 3. Executa as tools via RPC `api.*` com role read-only; devolve o resultado ao modelo até a resposta final.
 4. Grava `app.ai_runs` e devolve a resposta em streaming (SSE) com as queries e os trechos usados.
+
+### 7.1.1 Análise 360 (`POST /assistant/360`)
+1. Recebe a pergunta e os perfis envolvidos (padrão: todos os habilitados que tenham KPIs relevantes).
+2. Roda cada perfil **em paralelo**, cada um com suas instruções, tools e base de RAG, com limite de tokens por perfil.
+3. Um passo de **síntese** junta as respostas: concordâncias, **discordâncias entre áreas** (onde está o insight), ações por dono.
+4. Painel mostra a síntese no topo e cada lente em abas; tudo gravado em `app.ai_runs` (um run pai + um filho por perfil).
+5. Custo controlado: modelo menor nas lentes e o principal na síntese (configurável em `app.llm_models`).
 
 ### 7.2 MCP server (`apps/api`, Python FastMCP montado em `/mcp`)
 - **Tools:** as mesmas 5 do painel, chamando as funções `api.*` (conexão com role `analyst_ro`). Tools e endpoint `/assistant` compartilham o mesmo módulo Python.
 - **Transporte:** streamable HTTP no Render (protegido por bearer token `MCP_TOKEN`) e stdio para uso local.
 - **Prompts MCP:** lidos de `app.prompt_templates` em tempo real — o prompt editado no painel aparece no Claude Desktop/Code sem redeploy.
 - **Resources:** `catalog://{schema}/{table}` com descrição e colunas, para a IA saber o que pode consultar.
-- **Tool extra:** `search_knowledge(query, source_type?, filtros?)` — busca no RAG (§7.5).
+- **Tool extra:** `search_knowledge(query, source_type?, profile?, filtros?)` — busca no RAG (§7.5).
+- **Perfis no MCP:** cada perfil vira um prompt MCP (`perfil-<slug>`) e um resource `profile://<slug>`; as tools aceitam `profile` opcional; tool `analyze_360(question, profiles?)` chama a mesma lógica do endpoint 360.
 - Instalação: remoto `claude mcp add --transport http ravenstack-churn https://<api>.onrender.com/mcp --header "Authorization: Bearer <token>"`; local `claude mcp add ravenstack-churn -- uv run ravenstack-mcp` (documentado no README).
 
 ### 7.3 Multi-LLM (pronto para outros provedores)
@@ -219,6 +239,8 @@ O MCP é um protocolo aberto; o servidor em `/mcp` (streamable HTTP) serve qualq
 
 **Regra de ouro:** números vêm **sempre das tools** (consulta ao gold, ao vivo); o RAG traz **contexto e explicação**. Se um trecho recuperado traz um número, a resposta confere com uma tool antes de citar.
 
+**RAG por perfil:** cada chunk tem `profile_slugs` (vazio = comum a todos). A busca de um perfil usa conhecimento comum + o da sua área + as fontes listadas em `rag_sources`. Documentos anexados no painel (`app.knowledge_documents`, bucket `knowledge`) são indexados só para os perfis escolhidos.
+
 **O que é indexado (`app.knowledge_chunks`):**
 
 | Fonte | Conteúdo | Atualização |
@@ -228,6 +250,8 @@ O MCP é um protocolo aberto; o servidor em `/mcp` (streamable HTTP) serve qualq
 | `catalog` | descrição de tabelas e colunas (`ops.catalog`) | a cada ingestão |
 | `data_quality` | achados de `docs/data-quality.md` e `ops.dq_results` | a cada ingestão |
 | `report` | seções do relatório do CEO | quando o relatório muda |
+| `profile` | instruções de cada perfil e fichas das personas de cliente | quando um perfil/persona muda |
+| `area_document` | documentos anexados por área (playbooks, políticas) | no upload |
 | `churn_feedback` | `churn_events.feedback_text` — **só 4 textos distintos no dataset**: indexar uma vez como referência, sem peso analítico | a cada ingestão |
 
 **Como funciona ("inteligente"):**
@@ -270,7 +294,7 @@ submissions/tiago-canatelli/
 │   └── api/                          ← FastAPI: /assistant + /mcp + /health → Render web service
 ├── packages/
 │   ├── ravenlake/                    ← pipeline de ingestão (CLI) → Render cron job
-│   └── churn_core/                   ← cliente do banco, tools, prompts, `llm/` (adaptadores) e `rag/` (indexação e busca)
+│   └── churn_core/                   ← cliente do banco, tools, prompts, `llm/`, `rag/`, `profiles/` (8 perfis de fábrica em .md)
 ├── supabase/
 │   ├── migrations/                   ← bronze, ops, silver, gold, api, app, roles
 │   └── seed/prompts.sql
@@ -308,6 +332,7 @@ Blueprint em `submissions/tiago-canatelli/render.yaml`, conectado ao fork no Git
 3. Views gold + `api` + catálogo
 4. Painel: `/ingestao`, `/catalogo` → `/kpis`, `/risco` → `/assistente`, `/prompts`
 5. `apps/api` (assistente + MCP, compartilham as funções `api.*`) → **M3**
+5a. Perfis de análise de fábrica + endpoint 360 + painéis por área e por persona
 5b. RAG: `pgvector`, `ravenlake index`, `api.search_knowledge`, tool `search_knowledge`
 5c. Adaptadores multi-LLM + avaliação com 10 perguntas
 5d. Deploy no Render (API → dashboard → cron)

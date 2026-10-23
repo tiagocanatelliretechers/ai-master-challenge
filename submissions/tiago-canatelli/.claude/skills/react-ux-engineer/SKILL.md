@@ -64,6 +64,14 @@ Arquitetura, rotas e contratos: `docs/02-plano-tecnico.md` (seções 6 e 7). Pad
 - Ações: copiar, exportar markdown, fixar no dashboard, avaliar 👍/👎 (grava em `app.ai_runs`).
 - Atalhos contextuais: em qualquer conta/segmento/KPI, botão "Perguntar à IA" abre o assistente com o prompt certo e variáveis preenchidas.
 
+## 6.1 Perfis, áreas e personas
+
+- **Seletor de perfil** no assistente ("Analisar como: Financeiro ▾"); o perfil muda os prompts sugeridos e mostra um chip com a área na resposta.
+- **Análise 360:** síntese no topo (concordâncias, **discordâncias destacadas**, ações por dono) e uma aba por área com a resposta daquela lente; progresso por perfil enquanto roda.
+- **Editor de perfil (`/perfis`):** formulário (nome, pergunta central, KPIs em foco como multi-select do dicionário, fontes do RAG, prompts, tom) + editor das instruções; badge "personalizado" quando difere do padrão; histórico com diff e "restaurar padrão"; upload de documentos da área com status de indexação.
+- **Navegação:** sidebar com **Geral**, **Áreas** (8 itens) e **Personas de cliente**; filtro de persona de cliente disponível em todo painel de área (matriz área × persona sem telas extras).
+- **Ficha de persona de cliente:** cartão com quem é, tamanho (contas, MRR), por que sai, sinais de alerta e ação recomendada.
+
 ## 7. Tela de conexão MCP (`/conectar`)
 
 - Mostra a URL do MCP e instruções copiáveis por cliente: Claude Code (`claude mcp add --transport http …`), Claude Desktop / claude.ai (conector personalizado), ChatGPT, Cursor, Gemini CLI e genérico (JSON de configuração).

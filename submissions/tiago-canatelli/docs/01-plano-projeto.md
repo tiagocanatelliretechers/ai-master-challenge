@@ -40,6 +40,8 @@ A RavenStack (SaaS B2B, ~500 contas, assinaturas mensais/anuais) viu o churn sub
 - MCP aberto para Claude e outras IAs (ChatGPT, Cursor, Gemini CLI…)
 - RAG sobre as análises (hipóteses, KPIs, catálogo, qualidade, relatório) com busca híbrida e citações
 - Experiência de uso cuidada (skill `react-ux-engineer`)
+- 8 perfis de análise por área (Executivo, Financeiro, CS, Suporte, Produto, Marketing, Vendas, Dados), personalizáveis, cada um com sua base de RAG, e **análise 360** que cruza as lentes
+- Painéis em três camadas: geral, por área e por persona de cliente
 - Modelo preditivo de risco de churn
 - Relatório de diagnóstico para o CEO + README de submissão + PR
 
@@ -55,6 +57,10 @@ A RavenStack (SaaS B2B, ~500 contas, assinaturas mensais/anuais) viu o churn sub
 | CEO (não técnico) | Entender o porquê e decidir em 10 minutos | Relatório executivo de 1 página + dashboard CEO |
 | Head de CS | Saber **quem** ligar esta semana e o que dizer | Fila de contas em risco + playbook + assistente |
 | Head de Produto | Saber se o "uso cresceu" é real e onde não é | Dashboard de uso por segmento e por feature |
+| Financeiro | Previsibilidade da receita, refunds, concentração | Painel e perfil Financeiro |
+| Suporte | Se o atendimento segura ou empurra clientes | Painel e perfil Suporte |
+| Marketing | Que canal traz clientes que ficam | Painel e perfil Marketing |
+| Vendas | ICP, plano e licenças a priorizar | Painel e perfil Vendas |
 | Avaliadores G4 | Ver profundidade, julgamento e uso inteligente de IA | Process log, git history, diário de hipóteses |
 
 ## 5. Perguntas de negócio → indicadores
@@ -99,7 +105,7 @@ Budget recomendado pelo desafio: 4–6h. O escopo acima soma ~8h; por isso há *
 
 | Risco | Impacto | Mitigação |
 |---|---|---|
-| Estourar o budget com infra | Análise rasa | Timebox por fase; cortar nesta ordem: (1) outros provedores ficam só preparados (adaptador + teste), sem avaliação comparativa, (2) RAG só com hipóteses e feedback, (3) modelo vira regras de score, (4) MCP só pelo painel, (5) catálogo vira página estática. **Diagnóstico e relatório não encolhem** |
+| Estourar o budget com infra | Análise rasa | Timebox por fase; cortar nesta ordem: (0) perfis além de Executivo/CS/Produto/Suporte saem só com instruções e prompts de fábrica, sem painel próprio; análise 360 sem upload de documentos, (1) outros provedores ficam só preparados (adaptador + teste), sem avaliação comparativa, (2) RAG só com hipóteses e feedback, (3) modelo vira regras de score, (4) MCP só pelo painel, (5) catálogo vira página estática. **Diagnóstico e relatório não encolhem** |
 | Limite de projetos free no Supabase (2 ativos) | Bloqueia F2 | Pausar um projeto antigo **ou** usar Postgres local (`supabase start`) e migrar depois |
 | Dataset sintético com sinais fracos | Conclusões frágeis | Dizer isso com clareza no relatório; reportar efeitos com intervalo/tamanho de amostra |
 | Confundir correlação com causa | Recomendação errada | Checklist de causalidade obrigatório (skill do cientista de dados) |
