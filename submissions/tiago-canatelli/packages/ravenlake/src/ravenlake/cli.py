@@ -7,9 +7,8 @@ from uuid import UUID
 import typer
 from rich.console import Console
 from rich.table import Table
-from supabase import create_client
 
-from ravenlake import pipeline, sources
+from ravenlake import pipeline, runner, sources
 from ravenlake.settings import Settings
 
 app = typer.Typer(
@@ -29,23 +28,12 @@ def ingest(
         "../../datasets/kaggle-rivalytics"
     ),
     trigger: Annotated[str, typer.Option(help="manual, cron ou test")] = "manual",
+    force: Annotated[
+        bool, typer.Option(help="Reprocessa silver/qualidade/gold mesmo sem arquivo novo")
+    ] = False,
 ) -> None:
-    """Baixa os CSVs, grava no bucket raw, carrega bronze e reconstrói o silver."""
-    s = _settings()
-    if source == "kaggle":
-        token = s.kaggle_mcp_token.get_secret_value() if s.kaggle_mcp_token else None
-        console.print(f"Kaggle MCP: {s.kaggle_dataset}")
-        snapshot = sources.from_kaggle(s.kaggle_mcp_url, s.kaggle_dataset, token)
-    elif source == "local":
-        snapshot = sources.from_local(path)
-    else:
-        raise typer.BadParameter("use --source kaggle ou --source local")
-
-    storage = create_client(s.supabase_url, s.supabase_secret_key.get_secret_value())
-    with pipeline.connect(s.database_url.get_secret_value()) as conn:
-        _, status = pipeline.ingest(
-            conn, storage, s.raw_bucket, snapshot, trigger, s.batch_size, console.print
-        )
+    """Baixa os CSVs, grava no bucket raw, carrega bronze, silver, qualidade, gold e catálogo."""
+    status = runner.run_ingest(source, path, trigger, force, console.print)
     raise typer.Exit(code=0 if status in ("success", "skipped") else 1)
 
 

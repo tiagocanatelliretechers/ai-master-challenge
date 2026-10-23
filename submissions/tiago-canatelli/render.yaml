@@ -36,6 +36,10 @@ services:
         generateValue: true
       - key: CORS_ORIGINS
         value: "*"
+      - key: SUPABASE_URL        # ingestão pelo painel (POST /ingest): Storage raw
+        value: https://hzerhfuwziundqqezgcm.supabase.co
+      - key: SUPABASE_SECRET_KEY
+        sync: false
 
   - type: web
     name: ravenstack-dashboard

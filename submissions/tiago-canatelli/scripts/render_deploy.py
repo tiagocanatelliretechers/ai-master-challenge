@@ -54,6 +54,9 @@ def main() -> None:
         {"key": "AUTH_SECRET", "value": auth_secret},
         {"key": "MCP_TOKEN", "value": mcp_token},
         {"key": "CORS_ORIGINS", "value": "*"},
+        # ingestão disparada pelo painel (POST /ingest) e pelo cron
+        {"key": "SUPABASE_URL", "value": env["SUPABASE_URL"]},
+        {"key": "SUPABASE_SECRET_KEY", "value": env["SUPABASE_SECRET_KEY"]},
     ]
 
     if "ravenstack-api" in existing:

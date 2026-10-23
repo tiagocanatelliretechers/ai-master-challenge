@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { num } from './api'
+import { useEffect, useState } from 'react'
+import { num, post } from './api'
 import { useView } from './hooks'
 import { Badge, Card, State } from './ui'
 
@@ -12,10 +12,31 @@ type Column = { schema_name: string; table_name: string; column_name: string; da
 const tone = (s: string) => (s === 'success' || s === 'pass' ? 'green' : s === 'failed' || s === 'fail' ? 'red' : s === 'running' ? 'amber' : 'slate')
 const LAYERS = ['raw', 'bronze', 'silver', 'dq', 'gold', 'catalog']
 
-export default function DataOpsPage() {
+export default function DataOpsPage({ canIngest }: { canIngest: boolean }) {
   const [refresh, setRefresh] = useState(0)
   const runs = useView<Run>('ingestion_runs', {}, refresh)
   const sorted = [...(runs.data ?? [])].sort((a, b) => b.started_at.localeCompare(a.started_at))
+  const live = sorted[0]?.status === 'running'
+  const [force, setForce] = useState(true)
+  const [msg, setMsg] = useState<string | null>(null)
+  const [starting, setStarting] = useState(false)
+
+  // Atualiza a cada 3 s enquanto há uma ingestão rodando (progresso ao vivo); senão a cada 30 s.
+  useEffect(() => {
+    const id = window.setInterval(() => setRefresh((x) => x + 1), live || starting ? 3000 : 30000)
+    return () => window.clearInterval(id)
+  }, [live, starting])
+  useEffect(() => { if (live) setStarting(false) }, [live])
+
+  const startIngest = async () => {
+    setMsg(null); setStarting(true)
+    try {
+      const r = await post<{ status: string; mode: string }>('/ingest', { force })
+      setMsg(`Ingestão ${r.status} (${r.mode}). Acompanhe o progresso abaixo.`)
+      setRunId(null)
+      setRefresh((x) => x + 1)
+    } catch (e) { setMsg((e as Error).message); setStarting(false) }
+  }
   const [runId, setRunId] = useState<string | null>(null)
   const current = runId ?? sorted.find((r) => r.status !== 'skipped')?.run_id ?? sorted[0]?.run_id
   const steps = useView<Step>('ingestion_steps', current ? { run_id: current } : {}, refresh)
@@ -40,8 +61,19 @@ export default function DataOpsPage() {
               {new Date(r.started_at).toLocaleString('pt-BR')} <Badge tone={tone(r.status)}>{r.status}</Badge>
             </button>
           ))}
-          <button className="ml-auto rounded-lg border border-slate-300 px-2 py-1 text-xs dark:border-slate-700" onClick={() => setRefresh((x) => x + 1)}>Atualizar</button>
+          <span className="ml-auto flex items-center gap-2 text-xs">
+            {live ? <Badge tone="amber">● ingestão em andamento — atualizando a cada 3 s</Badge> : <span className="muted">atualiza sozinho</span>}
+            {canIngest && (
+              <>
+                <label className="muted flex items-center gap-1"><input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} /> reprocessar tudo</label>
+                <button disabled={live || starting} onClick={startIngest} className="rounded-lg bg-slate-900 px-3 py-1 text-white disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900">
+                  {live || starting ? 'Rodando…' : 'Executar ingestão agora'}
+                </button>
+              </>
+            )}
+          </span>
         </div>
+        {msg && <p className="mb-2 text-sm">{msg}</p>}
         <State loading={steps.loading} error={steps.error} empty={steps.data?.length === 0} />
         <table className="w-full text-sm">
           <thead className="muted text-left text-xs"><tr><th>Dataset</th>{LAYERS.map((l) => <th key={l}>{l}</th>)}</tr></thead>
@@ -56,6 +88,7 @@ export default function DataOpsPage() {
                   return (
                     <td key={l} className="text-xs">
                       <Badge tone={tone(s.status)}>{s.status}</Badge>
+                      {s.status === 'running' && <div className="mt-1 h-1.5 w-24 rounded bg-slate-200 dark:bg-slate-700"><div className="h-1.5 rounded bg-amber-500" style={{ width: `${progress}%` }} /></div>}
                       <div className="num muted">{s.rows_read ? `${num(s.rows_loaded)}/${num(s.rows_read)} (${progress}%)` : num(s.rows_loaded)}{s.rows_rejected ? ` · ${s.rows_rejected} rej.` : ''}</div>
                     </td>
                   )

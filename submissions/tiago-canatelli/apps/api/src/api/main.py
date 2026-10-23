@@ -5,6 +5,7 @@ Rodar: uv run uvicorn api.main:app --reload
 
 import hmac
 import os
+import threading
 from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException
@@ -179,6 +180,43 @@ def ask(q: Question, user: User = Depends(auth.current_user)) -> dict[str, Any]:
         return assistant.ask(q.question, profile, q.prompt_slug, user["email"])
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+class IngestRequest(BaseModel):
+    force: bool = False
+
+
+_ingest_lock = threading.Lock()
+
+
+def _run_ingest_background(force: bool, email: str) -> None:
+    from ravenlake.runner import run_ingest
+
+    try:
+        run_ingest(
+            source="kaggle",
+            trigger="manual",
+            force=force,
+            log=lambda m: print(f"[ingest {email}] {m}"),
+        )
+    except Exception as exc:  # o erro fica registrado em ops.ingestion_runs pelo pipeline
+        print(f"[ingest {email}] falhou: {exc}")
+    finally:
+        _ingest_lock.release()
+
+
+@api.post("/ingest")
+def start_ingest(body: IngestRequest, user: User = Depends(require_edit)) -> dict[str, str]:
+    """Dispara uma ingestão (Kaggle MCP -> raw -> bronze -> silver -> DQ -> gold) em segundo plano."""
+    running = db.rows(
+        "select run_id from ops.ingestion_runs where status = 'running' and started_at > now() - interval '15 minutes'"
+    )
+    if running or not _ingest_lock.acquire(blocking=False):
+        raise HTTPException(status_code=409, detail="já existe uma ingestão em andamento")
+    threading.Thread(
+        target=_run_ingest_background, args=(body.force, user["email"]), daemon=True
+    ).start()
+    return {"status": "iniciada", "mode": "reprocessar" if body.force else "verificar fonte"}
 
 
 # MCP (streamable HTTP) como app externo; a API FastAPI fica montada na raiz.

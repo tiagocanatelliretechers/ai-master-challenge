@@ -95,6 +95,7 @@ dependencies = [
     { name = "mcp" },
     { name = "psycopg", extra = ["binary", "pool"] },
     { name = "pydantic-settings" },
+    { name = "ravenlake" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -105,6 +106,7 @@ requires-dist = [
     { name = "mcp", specifier = ">=2.3" },
     { name = "psycopg", extras = ["binary", "pool"], specifier = ">=3.2" },
     { name = "pydantic-settings", specifier = ">=2.6" },
+    { name = "ravenlake", editable = "packages/ravenlake" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
 ]
 

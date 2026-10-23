@@ -10,7 +10,11 @@ dependencies = [
   "mcp>=2.3",
   "psycopg[binary,pool]>=3.2",
   "pydantic-settings>=2.6",
+  "ravenlake",
 ]
+
+[tool.uv.sources]
+ravenlake = { workspace = true }
 
 [project.scripts]
 ravenstack-mcp = "api.mcp_server:run_stdio"

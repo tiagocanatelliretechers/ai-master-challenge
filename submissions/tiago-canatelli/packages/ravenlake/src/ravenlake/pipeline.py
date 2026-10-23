@@ -182,6 +182,7 @@ def ingest(
     trigger: str,
     batch_size: int,
     log: Log,
+    force: bool = False,
 ) -> tuple[UUID, str]:
     """Executa uma ingestão completa; devolve (run_id, status)."""
     t0 = time.monotonic()
@@ -196,9 +197,9 @@ def ingest(
             changed |= load_bronze(conn, run_id, dataset, data, batch_size, log)
 
         silver_empty = conn.execute("select not exists (select 1 from silver.accounts)").fetchone()
-        if not changed and silver_empty and not silver_empty[0]:
+        if not changed and not force and silver_empty and not silver_empty[0]:
             finish_run(conn, run_id, "skipped")
-            log("nenhum arquivo novo: run marcado como skipped")
+            log("nenhum arquivo novo: run marcado como skipped (use --force para reprocessar)")
             return run_id, "skipped"
 
         log("silver.refresh …")

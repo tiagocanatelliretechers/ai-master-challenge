@@ -85,7 +85,7 @@ export default function App() {
       </header>
       {current === 'geral' && <OverviewPage />}
       {current === 'risco' && <RiskPage onAsk={(q) => { setQuestion(q); go('ia') }} />}
-      {current === 'dados' && <DataOpsPage />}
+      {current === 'dados' && <DataOpsPage canIngest={user.can_edit} />}
       {current === 'ia' && <AssistantPage initialQuestion={question} user={user} />}
     </div>
   )
