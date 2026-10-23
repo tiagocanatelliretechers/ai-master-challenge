@@ -171,7 +171,7 @@ ravenlake profiles sync    # carrega perfis de fábrica (.md) em app.analysis_pr
 
 ## 12. Git
 
-- Branch `submission/tiago-canatelli`; só alterar `submissions/tiago-canatelli/`. O `.gitignore` raiz ignora `submissions/` → `git add -f`.
+- Branch `submission/tiago-canatelli`; só alterar `submissions/tiago-canatelli/`. O `.gitignore` raiz ignora `submissions/` → stage com `scripts/stage.sh` (faz `git add -f` e remove o que o `.gitignore` da pasta ignora; nunca `git add -f` direto).
 - Commits pequenos, um por passo, mensagem no imperativo explicando o porquê — o histórico é evidência do process log.
 - Nunca commitar `.env`, CSVs, `node_modules`, `.venv`.
 

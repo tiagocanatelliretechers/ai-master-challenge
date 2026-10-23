@@ -29,3 +29,8 @@ _(registrar em tempo real — skill `process-log-keeper`)_
 - **O que a IA fez:** a checagem `linhas_rejeitadas` usava como total só accounts + subscriptions.
 - **Como percebi:** revisando a saída do teste de fumaça.
 - **Correção:** nova migration; o total passou a ser as linhas lidas pelo silver no run.
+
+### `git add -f` commitou `.venv` e caches (4.306 arquivos)
+- **O que a IA fez:** usou `git add -f` na pasta da submissão. O `-f` ignora também o `.gitignore` interno, e entraram `.venv`, `.mypy_cache` e outros caches.
+- **Como percebi:** pela lista do `git status` logo após o commit.
+- **Correção:** o commit ainda era local; foi refeito com `--amend` sem esses arquivos. Criei `scripts/stage.sh`, que faz `git add -f` e depois remove o que o `.gitignore` da pasta ignora, e a skill de engenharia agora proíbe `git add -f` direto.
