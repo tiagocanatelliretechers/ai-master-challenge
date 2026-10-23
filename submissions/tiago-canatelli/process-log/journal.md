@@ -18,3 +18,14 @@
 - **A IA fez:** testou o endpoint `https://www.kaggle.com/mcp` direto por JSON-RPC (76 tools; `download_dataset` funciona sem login e devolve URL assinada), baixou o zip para `datasets/kaggle-rivalytics/` e conferiu: 500 / 5.000 / 25.000 / 2.000 / 600 linhas, cabeçalhos iguais ao schema da skill. `get_dataset_info`: versão 1, atualizada em 2025-07-21.
 - **Decisão:** o pipeline usa o Kaggle MCP como fonte, com checagem de versão + sha256 (ver `decisions.md`).
 - **sha256:** accounts `348d8ba9…`, churn_events `6391c41d…`, feature_usage `c081da2b…`, subscriptions `dcf1d93c…`, support_tickets `ba000695…`.
+
+## 2026-10-23 08:50–09:25 · F1 · Revisão das skills uma a uma
+- **Pedi à IA:** revisar cada skill comigo antes de começar a execução.
+- **A IA fez:** antes de apresentar cada skill, conferiu as regras nos CSVs: 77% do uso tem data anterior ao início da assinatura; as três definições de churn discordam; churn e assinaturas não se cruzam (só 6 de 600 churns coincidem com o fim de uma assinatura); `feedback_text` tem só 4 textos distintos; o churn por trimestre vai de 6 → 251.
+- **Verifiquei / ajustei:**
+  - escolhi `churn_events` como fonte de verdade;
+  - pedi uma skill de React/UX, multi-LLM, MCP aberto para outras IAs e RAG;
+  - pedi perfis de análise por área com RAG próprio e análise 360, além de painéis geral, por área e por persona de cliente;
+  - decidi que tudo roda no Supabase SaaS, sem Docker.
+- **Resultado:** 5 skills revisadas. Commits `3701de5`, `9ecaebe`, `f4557e8`, `4da3719`, `d0defc4`.
+- **Próximo:** F2 — migrations e ingestão no Supabase.
