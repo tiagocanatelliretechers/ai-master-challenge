@@ -36,7 +36,10 @@ A RavenStack (SaaS B2B, ~500 contas, assinaturas mensais/anuais) viu o churn sub
 - Views de KPIs na camada gold
 - Monorepo com deploy no Render (dashboard, API do assistente + MCP, cron de ingestão)
 - Painel React: acompanhamento da ingestão, catálogo, dashboards de KPI, fila de contas em risco
-- Assistente de IA (MCP + painel) com biblioteca de prompts editáveis, que responde com o **porquê** e os números
+- Assistente de IA no painel, conectado ao Claude e preparado para outros provedores (OpenAI, Gemini, compatíveis), com biblioteca de prompts editáveis, que responde com o **porquê** e os números
+- MCP aberto para Claude e outras IAs (ChatGPT, Cursor, Gemini CLI…)
+- RAG sobre as análises (hipóteses, KPIs, catálogo, qualidade, feedback de clientes) com busca híbrida e citações
+- Experiência de uso cuidada (skill `react-ux-engineer`)
 - Modelo preditivo de risco de churn
 - Relatório de diagnóstico para o CEO + README de submissão + PR
 
@@ -96,7 +99,7 @@ Budget recomendado pelo desafio: 4–6h. O escopo acima soma ~8h; por isso há *
 
 | Risco | Impacto | Mitigação |
 |---|---|---|
-| Estourar o budget com infra | Análise rasa | Timebox por fase; cortar nesta ordem: (1) modelo vira regras de score, (2) MCP só pelo painel, (3) catálogo vira página estática. **Diagnóstico e relatório não encolhem** |
+| Estourar o budget com infra | Análise rasa | Timebox por fase; cortar nesta ordem: (1) outros provedores ficam só preparados (adaptador + teste), sem avaliação comparativa, (2) RAG só com hipóteses e feedback, (3) modelo vira regras de score, (4) MCP só pelo painel, (5) catálogo vira página estática. **Diagnóstico e relatório não encolhem** |
 | Limite de projetos free no Supabase (2 ativos) | Bloqueia F2 | Pausar um projeto antigo **ou** usar Postgres local (`supabase start`) e migrar depois |
 | Dataset sintético com sinais fracos | Conclusões frágeis | Dizer isso com clareza no relatório; reportar efeitos com intervalo/tamanho de amostra |
 | Confundir correlação com causa | Recomendação errada | Checklist de causalidade obrigatório (skill do cientista de dados) |
@@ -123,3 +126,6 @@ Budget recomendado pelo desafio: 4–6h. O escopo acima soma ~8h; por isso há *
 | Dados | Token Kaggle / download manual dos 5 CSVs | Token (reprodutível no README) |
 | Hospedagem | ✅ Decidido: monorepo com deploy no Render (dashboard, API/MCP, cron) | — |
 | Nome e LinkedIn no README | — | Preciso dessas informações |
+| Modelo de embedding do RAG | Voyage AI / OpenAI `text-embedding-3-small` / local (`fastembed`) | Voyage (qualidade, recomendado pela Anthropic) — exige chave |
+| Provedores extras no lançamento | OpenAI, Gemini, OpenAI-compatível | Deixar adaptadores prontos; habilitar os que tiverem chave |
+| Definição de churn | `churn_events` / `accounts.churn_flag` / `end_date` | `churn_events` como fonte de verdade (aguardando sua confirmação) |

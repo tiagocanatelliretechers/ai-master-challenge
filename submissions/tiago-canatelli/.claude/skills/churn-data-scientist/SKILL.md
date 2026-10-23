@@ -25,6 +25,21 @@ Mesmo assim, **inspecione o CSV/tabela antes de usar** (`head`, `information_sch
 
 Edge cases declarados pelo autor (tratar explicitamente, nunca descobrir por acaso): mudanças de plano no meio do ciclo, nulos (satisfação, uso, feedback), **reativações**, referências duplicadas, picos de uso em features beta. Existe um notebook público "Data Quality Audit: Why I Rejected 25,000 Rows" — sinal de que `feature_usage` pode ter problema sério (ex.: uso fora do período da assinatura). Verifique antes de confiar nessa tabela.
 
+### Fatos verificados nos CSVs (2026-10-23, versão 1 do dataset)
+
+| Fato | Número | Consequência |
+|---|---|---|
+| Uso registrado **antes** do início da assinatura | 19.142 de 25.000 linhas (77%) | Datas de uso não respeitam o ciclo da assinatura → não dá para usar "uso dentro da assinatura" sem regra explícita |
+| Uso após o fim da assinatura | 290 linhas | Idem |
+| `usage_id` duplicado | 21 | Deduplicar no silver |
+| Assinaturas sem uso | 33 de 5.000 | Uso zero ≠ dado faltante; marcar |
+| Contas com evento de churn | 352 de 500 (até 5 eventos por conta; 61 eventos `is_reactivation`) | Churn é evento recorrente, não estado |
+| `accounts.churn_flag` × `churn_events` | 277 contas com evento e flag `False`; 35 com flag `True` e sem evento | **Três definições de churn discordam** (flag da conta, eventos, `end_date`/flag da assinatura) — decidir antes de qualquer taxa |
+| Assinaturas sem `end_date` | 4.514 de 5.000 (até 19 por conta) | Assinaturas sobrepostas: somar MRR por conta pode inflar receita — definir regra de MRR vigente |
+| CSAT nulo | 825 de 2.000 tickets (41%) | A "satisfação ok" ignora 41% dos tickets |
+| `reason_code` | features 114 · support 104 · budget 104 · unknown 95 · competitor 92 · pricing 91 | Distribuição quase uniforme → motivo declarado sozinho não explica nada |
+| Período | uso e churn de 2023-01 a 2024-12 | "Últimos meses" = fim de 2024 |
+
 Regras e armadilhas:
 - 600 eventos de churn para 500 contas, com `is_reactivation` → a mesma conta pode churnar mais de uma vez. Defina se a taxa conta eventos ou contas e registre em `decisions.md`.
 - `feature_usage` liga por `subscription_id` — sempre passe por `subscriptions` para chegar à conta.

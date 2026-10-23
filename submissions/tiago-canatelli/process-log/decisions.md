@@ -24,3 +24,9 @@
 - **Escolha:** MCP do Kaggle (`get_dataset_info` + `download_dataset`), com fonte local como fallback.
 - **Motivo:** funciona sem credencial; permite sincronização incremental por versão; REST exige token.
 - **Ressalva:** o dataset está na versão 1 desde 2025-07-21 — a sincronização é demonstrativa.
+
+### Skill de React/UX, multi-LLM, MCP aberto e RAG
+- **Pedido:** melhor experiência no painel, conexão com Claude pelo front, MCP para Claude e outras IAs, chaves de outros LLMs e RAG nas análises.
+- **Escolhas:** skill `react-ux-engineer` (shadcn/ui); camada `churn_core.llm` com adaptadores (Anthropic padrão + OpenAI, Gemini, OpenAI-compatível); MCP streamable HTTP documentado por cliente; RAG com pgvector + full-text (busca híbrida) no próprio Supabase.
+- **Regra de ouro do RAG:** números sempre das tools (ao vivo); RAG traz contexto e explicação — evita a IA citar número velho de um documento.
+- **Custo:** aumenta o escopo; entrou no topo da ordem de cortes.

@@ -1,6 +1,6 @@
 ---
 name: python-software-engineer
-description: Engenheiro de software sênior e especialista em Python do monorepo RavenStack Churn Lake. Use ao escrever ou revisar código do pipeline de ingestão (ravenlake), migrations Supabase, funções SQL da camada api, a API FastAPI com assistente e MCP, o painel React, deploy no Render (render.yaml), testes, configuração, segurança de segredos e instruções de setup.
+description: Engenheiro de software sênior e especialista em Python do monorepo RavenStack Churn Lake. Use ao escrever ou revisar código do pipeline de ingestão (ravenlake), migrations Supabase, funções SQL da camada api, a API FastAPI com assistente e MCP, o painel React (com a skill react-ux-engineer), a camada multi-LLM, o RAG com pgvector, deploy no Render (render.yaml), testes, configuração, segurança de segredos e instruções de setup.
 ---
 
 # Engenharia de software — RavenStack Churn Lake
@@ -54,6 +54,8 @@ Arquitetura e contratos: `docs/02-plano-tecnico.md`. Monorepo com raiz em `submi
 
 ## 6. Painel React
 
+- Padrões de UX, layout, telas e experiência do assistente: skill `react-ux-engineer`. Esta seção cobre só build e integração.
+
 - Vite + React 18 + TypeScript strict, Tailwind + shadcn/ui, TanStack Query, Recharts, `@supabase/supabase-js`.
 - Tipos gerados: `supabase gen types typescript --schema api > src/lib/database.types.ts`.
 - Um hook por view (`useIngestionRuns`, `useCatalog`, `useKpiRevenue`, `useRiskQueue`...). Realtime via `supabase.channel()` em `ops.ingestion_runs`/`ops.ingestion_steps`.
@@ -61,6 +63,22 @@ Arquitetura e contratos: `docs/02-plano-tecnico.md`. Monorepo com raiz em `submi
 - Toda tela trata loading, vazio e erro. Números formatados em pt-BR (`Intl.NumberFormat`), moeda em USD.
 - Gráficos: siga a skill `dataviz`.
 - `npm run build` e `tsc --noEmit` limpos antes de commit.
+
+## 6.1 Multi-LLM (`churn_core.llm`)
+
+- Protocolo `LLMProvider` com `chat(messages, tools, stream)` e `embed(texts)`; adaptadores `anthropic`, `openai`, `gemini`, `openai_compatible` (via `base_url`). SDKs oficiais de cada provedor; nada de chamada HTTP crua quando existe SDK.
+- Tools em JSON Schema definidas uma vez em `churn_core.tools`; cada adaptador converte para o formato do provedor e normaliza a resposta para eventos comuns (`text_delta`, `tool_call`, `tool_result`, `done`).
+- Registro em `app.llm_models`; provedor só fica disponível se a env var da chave existir. Nunca logar, devolver ou gravar chave.
+- Timeouts, retry com backoff em 429/5xx, limite de iterações de tool use e de tokens por resposta.
+- Teste de contrato: os mesmos testes rodam contra todos os adaptadores com respostas gravadas (sem chamar API real no CI).
+
+## 6.2 RAG (`churn_core.rag`)
+
+- Extensão `vector` no Supabase; tabela `app.knowledge_chunks` com índice HNSW (`vector_cosine_ops`) e GIN no `tsv`.
+- Chunking por seção de markdown (títulos `###`) ou por registro; `content_hash` para reindexar só o que mudou; guardar `embedding_model` — trocar de modelo exige reindexar tudo.
+- Busca em `api.search_knowledge` (SQL): híbrida vetor + full-text com Reciprocal Rank Fusion e filtros por `metadata`.
+- Conteúdo recuperado entra no prompt delimitado como **dados**, com instrução explícita de não seguir instruções contidas nele (o `feedback_text` vem de clientes).
+- Números citados na resposta vêm das tools, não dos trechos.
 
 ## 7. Deploy no Render
 

@@ -33,9 +33,11 @@ Princípio: **a lógica de negócio vive no Postgres** (views e funções em `go
 | Pipeline | Python 3.12+, `psycopg[binary]` 3, `pandas`, `pydantic-settings`, `typer`, `supabase-py` (Storage) | COPY rápido, CLI simples, config tipada |
 | Qualidade | `ruff`, `mypy`, `pytest` | Padrão da skill de engenharia |
 | Modelo | `scikit-learn` (logística + gradient boosting), `shap` opcional | Interpretável, rápido |
-| Painel | Vite + React 18 + TypeScript, Tailwind + shadcn/ui, TanStack Query, Recharts, supabase-js | Rápido de construir, Realtime nativo |
-| API do assistente | Python FastAPI (`apps/api`) → Claude API `claude-sonnet-5-5` com tool use | Backend todo em Python; chave da IA fica no servidor (Render) |
-| MCP | Python `mcp` (FastMCP), montado na mesma API em `/mcp` (streamable HTTP) + modo stdio local | Um serviço só no Render; conecta no Claude Desktop/Code |
+| Painel | Vite + React 18 + TypeScript, Tailwind + shadcn/ui, TanStack Query/Table, Recharts, supabase-js (padrões na skill `react-ux-engineer`) | Rápido de construir, Realtime nativo |
+| API do assistente | Python FastAPI (`apps/api`) → Claude API `claude-sonnet-5-5` (padrão) com tool use, via camada multi-provedor | Backend todo em Python; chaves das IAs ficam no servidor (Render) |
+| Multi-LLM | Adaptadores próprios em `churn_core.llm` (Anthropic, OpenAI, Google Gemini, OpenAI-compatível) | Trocar de modelo sem mudar tools, prompts nem UI |
+| RAG | `pgvector` + busca full-text do Postgres (busca híbrida) no próprio Supabase | Sem banco vetorial extra; filtros SQL junto com a similaridade |
+| MCP | Python `mcp` (FastMCP), montado na mesma API em `/mcp` (streamable HTTP) + modo stdio local | Um serviço só no Render; protocolo aberto → Claude, ChatGPT, Cursor, Gemini CLI e outros clientes MCP |
 | Repositório | Monorepo em `submissions/tiago-canatelli/` (`apps/`, `packages/`, `supabase/`) | Uma PR, um histórico, deploy por pasta |
 | Deploy | Render (Blueprint `render.yaml`) | Static site + web service + cron, cada um com seu `rootDir` |
 
@@ -94,7 +96,9 @@ Princípio: **a lógica de negócio vive no Postgres** (views e funções em `go
 |---|---|
 | `app.prompt_templates` | `id`, `slug`, `title`, `category` (CEO/CS/Produto/Dados), `description`, `body` (com `{{variaveis}}`), `variables jsonb` (nome, tipo, default), `output_format`, `is_default`, `current_version`, `updated_at`, `updated_by` |
 | `app.prompt_versions` | `prompt_id`, `version`, `body`, `variables`, `created_at`, `created_by` — histórico; permite restaurar o padrão |
-| `app.ai_runs` | `id`, `prompt_id`, `version`, `rendered_prompt`, `tool_calls jsonb` (queries executadas), `answer`, `model`, `tokens`, `latency_ms`, `created_at` — auditoria e evidência para o process log |
+| `app.ai_runs` | `id`, `prompt_id`, `version`, `rendered_prompt`, `provider`, `model`, `tool_calls jsonb` (queries executadas), `retrieved_chunks jsonb` (fontes do RAG), `answer`, `tokens`, `latency_ms`, `feedback` (👍/👎), `created_at` — auditoria e evidência para o process log |
+| `app.llm_models` | `provider` (anthropic/openai/google/openai_compatible), `model`, `label`, `enabled`, `is_default`, `supports_tools`, `context_window`, `cost_in/out por 1M tokens` — registro do que aparece no seletor do painel (chaves **não** ficam aqui) |
+| `app.knowledge_chunks` | `id`, `source_type` (hypothesis/finding/kpi_definition/catalog/data_quality/report/churn_feedback/ticket_summary), `source_ref`, `title`, `content`, `metadata jsonb` (segmento, conta, período, camada, veredito), `embedding vector`, `tsv tsvector`, `content_hash`, `embedding_model`, `updated_at` — base do RAG |
 
 Prompts semente (exemplos): "Por que o churn subiu em {{periodo}}?", "A satisfação está mesmo ok?", "O uso cresceu para todos os segmentos?", "Quais contas o CS deve ligar esta semana?", "Explique o risco da conta {{account_id}}", "Quanto MRR recuperamos se {{acao}}?".
 
@@ -111,6 +115,7 @@ ravenlake ingest --dataset churn_events      # só um dataset
 ravenlake dq                                 # só checagens
 ravenlake catalog refresh                    # só catálogo
 ravenlake score                              # recalcula risk_scores
+ravenlake index                              # atualiza a base do RAG (só o que mudou)
 ```
 
 ### 4.1 Fonte: Kaggle via MCP
@@ -162,6 +167,8 @@ Páginas:
 | `/contas/:id` | CS | Visão 360: linha do tempo de assinatura, uso, tickets, score |
 | `/assistente` | Todos | Escolhe um prompt pronto, preenche variáveis, edita o texto antes de enviar, vê resposta com "Por quê" e as queries usadas |
 | `/prompts` | Todos | Biblioteca de prompts: criar, editar, versionar, restaurar padrão |
+| `/conectar` | Todos | Como conectar o MCP no Claude, ChatGPT, Cursor, Gemini CLI etc.; testar conexão; lista de tools e prompts |
+| `/configuracoes/modelos` | Admin | Provedores e modelos habilitados, modelo padrão, status de cada chave (configurada ou não — o valor nunca aparece) |
 
 Estrutura: `src/pages`, `src/components`, `src/lib/supabase.ts`, `src/hooks/use*.ts` (TanStack Query por view), tipos gerados com `supabase gen types typescript`.
 
@@ -169,16 +176,71 @@ Estrutura: `src/pages`, `src/components`, `src/lib/supabase.ts`, `src/hooks/use*
 
 ### 7.1 No painel (`apps/api`, endpoint `POST /assistant`)
 1. Painel envia `prompt_id`, variáveis e o texto (possivelmente editado), com o JWT do Supabase Auth (a API valida).
-2. API renderiza o prompt, chama Claude API (`claude-sonnet-5-5`) com tools: `get_kpi`, `get_account_health`, `list_at_risk_accounts`, `churn_drivers`, `run_readonly_query`.
+2. API renderiza o prompt, recupera contexto no RAG (§7.5), chama o modelo escolhido (padrão Claude `claude-sonnet-5-5`) via camada multi-provedor (§7.3) com tools: `get_kpi`, `get_account_health`, `list_at_risk_accounts`, `churn_drivers`, `run_readonly_query`.
 3. Executa as tools via RPC `api.*` com role read-only; devolve o resultado ao modelo até a resposta final.
-4. Grava `app.ai_runs` e retorna resposta + queries usadas.
+4. Grava `app.ai_runs` e devolve a resposta em streaming (SSE) com as queries e os trechos usados.
 
 ### 7.2 MCP server (`apps/api`, Python FastMCP montado em `/mcp`)
 - **Tools:** as mesmas 5 do painel, chamando as funções `api.*` (conexão com role `analyst_ro`). Tools e endpoint `/assistant` compartilham o mesmo módulo Python.
 - **Transporte:** streamable HTTP no Render (protegido por bearer token `MCP_TOKEN`) e stdio para uso local.
 - **Prompts MCP:** lidos de `app.prompt_templates` em tempo real — o prompt editado no painel aparece no Claude Desktop/Code sem redeploy.
 - **Resources:** `catalog://{schema}/{table}` com descrição e colunas, para a IA saber o que pode consultar.
+- **Tool extra:** `search_knowledge(query, source_type?, filtros?)` — busca no RAG (§7.5).
 - Instalação: remoto `claude mcp add --transport http ravenstack-churn https://<api>.onrender.com/mcp --header "Authorization: Bearer <token>"`; local `claude mcp add ravenstack-churn -- uv run ravenstack-mcp` (documentado no README).
+
+### 7.3 Multi-LLM (pronto para outros provedores)
+
+- Interface única em `churn_core.llm`: `LLMProvider.chat(messages, tools, stream) -> eventos` e `embed(texts)`. Adaptadores: `AnthropicProvider` (padrão), `OpenAIProvider`, `GeminiProvider`, `OpenAICompatibleProvider` (Groq, Mistral, DeepSeek, OpenRouter, Ollama local — qualquer endpoint compatível com a API da OpenAI, via `base_url`).
+- Tools definidas **uma vez** (JSON Schema) e convertidas para o formato de cada provedor pelo adaptador; o loop de tool use é o mesmo para todos.
+- Chaves por env var no Render, todas opcionais exceto a padrão: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_COMPATIBLE_BASE_URL` + `OPENAI_COMPATIBLE_API_KEY`. Provedor sem chave fica oculto no seletor.
+- `GET /models` devolve os modelos de `app.llm_models` cujo provedor tem chave configurada.
+- Futuro (fora do escopo do desafio): chave do próprio usuário (BYOK) guardada no Supabase Vault.
+- Avaliação: o mesmo conjunto de 10 perguntas com resposta conhecida (números do gold) roda em cada provedor; resultado vira tabela no process log (diferencial: comparar modelos com evidência).
+
+### 7.4 MCP para Claude e outras IAs
+
+O MCP é um protocolo aberto; o servidor em `/mcp` (streamable HTTP) serve qualquer cliente compatível:
+
+| Cliente | Como conecta |
+|---|---|
+| Claude Code | `claude mcp add --transport http ravenstack-churn <url>/mcp --header "Authorization: Bearer <token>"` |
+| Claude Desktop / claude.ai | Conector personalizado com a URL remota |
+| ChatGPT | Conector MCP personalizado (modo desenvolvedor) |
+| OpenAI / Anthropic API | Ferramenta "remote MCP" apontando para a URL |
+| Cursor, Windsurf, VS Code, Gemini CLI | Configuração JSON de servidor MCP remoto |
+
+- Autenticação: bearer token agora; alguns clientes só aceitam OAuth ou servidor sem autenticação → plano B é OAuth via Supabase Auth (registrar como limitação se não der tempo).
+- Testar cada cliente usado de verdade e guardar print no process log; não afirmar compatibilidade não testada.
+- A tela `/conectar` do painel gera as instruções prontas para copiar.
+
+### 7.5 RAG sobre as análises
+
+**Objetivo:** a IA responder com o que **já sabemos** (hipóteses testadas, definições, achados de qualidade, feedback de clientes) e não só com números soltos.
+
+**Regra de ouro:** números vêm **sempre das tools** (consulta ao gold, ao vivo); o RAG traz **contexto e explicação**. Se um trecho recuperado traz um número, a resposta confere com uma tool antes de citar.
+
+**O que é indexado (`app.knowledge_chunks`):**
+
+| Fonte | Conteúdo | Atualização |
+|---|---|---|
+| `hypothesis` | cada hipótese do `process-log/hypotheses.md` com veredito e números | quando o arquivo muda |
+| `kpi_definition` | dicionário de KPIs da skill de negócio | idem |
+| `catalog` | descrição de tabelas e colunas (`ops.catalog`) | a cada ingestão |
+| `data_quality` | achados de `docs/data-quality.md` e `ops.dq_results` | a cada ingestão |
+| `report` | seções do relatório do CEO | quando o relatório muda |
+| `churn_feedback` | `churn_events.feedback_text` com metadados (conta, motivo, data, MRR) | a cada ingestão |
+
+**Como funciona ("inteligente"):**
+1. **Indexação** no pipeline (`ravenlake index`): divide por seção (markdown) ou por registro (feedback), calcula `content_hash` e só gera embedding do que mudou.
+2. **Busca híbrida:** similaridade vetorial (`pgvector`, índice HNSW) + full-text (`tsvector`), combinadas por Reciprocal Rank Fusion, numa função SQL `api.search_knowledge(query_embedding, query_text, filters, k)`.
+3. **Filtros por metadados** antes do ranking (segmento, período, tipo de fonte, veredito) — "só hipóteses confirmadas sobre Enterprise".
+4. **Reescrita da pergunta** pelo próprio LLM antes da busca (ex.: "por que os grandes saem?" → "churn contas Enterprise MRR alto motivo").
+5. **Citações:** cada trecho usado aparece no "Por quê" com link para a fonte.
+6. **Análise semântica do feedback:** agrupar `feedback_text` por tema (embeddings + clusterização) e comparar com o `reason_code` declarado — alimenta a hipótese H4 (motivo declarado ≠ causa real).
+
+**Embeddings:** via `LLMProvider.embed`. A Anthropic não oferece modelo de embedding; opções: Voyage AI (recomendado pela Anthropic), OpenAI `text-embedding-3-small`, ou modelo local (`fastembed`) só no pipeline. Dimensão fixada na migration conforme a escolha (decisão aberta).
+
+**Avaliação:** 10 perguntas com fonte esperada; medir se a fonte certa aparece no top 5 (recall@5) e registrar no process log.
 
 ## 8. Segurança
 
@@ -189,7 +251,9 @@ Estrutura: `src/pages`, `src/components`, `src/lib/supabase.ts`, `src/hooks/use*
 | Role `analyst_ro` | `SELECT` em `api.*`, `statement_timeout` 5s, sem acesso a bronze/silver |
 | `run_readonly_query` | Rejeita qualquer coisa que não seja um único `SELECT`; roda em transação read-only |
 | Chave Anthropic | Env var secreta do serviço `apps/api` no Render (`sync: false` no Blueprint); MCP usa o cliente do próprio usuário (Claude Desktop/Code) |
-| MCP remoto | Bearer token `MCP_TOKEN` (gerado pelo Render com `generateValue`) |
+| MCP remoto | Bearer token `MCP_TOKEN` (gerado pelo Render com `generateValue`); OAuth como plano B |
+| Chaves de outros LLMs | Só env vars no Render (`sync: false`); nunca no banco, no front ou em logs; `/models` só informa se existe |
+| RAG | Conteúdo indexado é só leitura para a IA; trechos são tratados como dados, nunca como instruções (proteção contra prompt injection via `feedback_text`) |
 | Advisors | Rodar `get_advisors` (security + performance) ao fim de F2 e F5 |
 
 ## 9. Estrutura do monorepo
@@ -206,7 +270,7 @@ submissions/tiago-canatelli/
 │   └── api/                          ← FastAPI: /assistant + /mcp + /health → Render web service
 ├── packages/
 │   ├── ravenlake/                    ← pipeline de ingestão (CLI) → Render cron job
-│   └── churn_core/                   ← cliente do banco, tools de análise e prompts (usado por api e ravenlake)
+│   └── churn_core/                   ← cliente do banco, tools, prompts, `llm/` (adaptadores) e `rag/` (indexação e busca)
 ├── supabase/
 │   ├── migrations/                   ← bronze, ops, silver, gold, api, app, roles
 │   └── seed/prompts.sql
@@ -228,7 +292,7 @@ Blueprint em `submissions/tiago-canatelli/render.yaml`, conectado ao fork no Git
 | Serviço | Tipo Render | `rootDir` | Build / start | Env vars |
 |---|---|---|---|---|
 | `ravenstack-dashboard` | static site | `apps/dashboard` | `npm ci && npm run build` → publica `dist`; rewrite `/* → /index.html` | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL` |
-| `ravenstack-api` | web service (Python) | raiz do monorepo | `uv sync --package api` → `uv run uvicorn api.main:app --host 0.0.0.0 --port $PORT`; health check `/health` | `ANALYST_RO_DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_JWT_SECRET`, `ANTHROPIC_API_KEY` (sync: false), `MCP_TOKEN` (generateValue), `PYTHON_VERSION` |
+| `ravenstack-api` | web service (Python) | raiz do monorepo | `uv sync --package api` → `uv run uvicorn api.main:app --host 0.0.0.0 --port $PORT`; health check `/health` | `ANALYST_RO_DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_JWT_SECRET`, `ANTHROPIC_API_KEY` (sync: false), `OPENAI_API_KEY`/`GOOGLE_API_KEY`/`OPENAI_COMPATIBLE_*`/`VOYAGE_API_KEY` (opcionais, sync: false), `MCP_TOKEN` (generateValue), `PYTHON_VERSION` |
 | `ravenstack-ingest` | cron job (opcional) | raiz do monorepo | `uv run ravenlake ingest` (diário; checa versão no Kaggle MCP) | `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
 
 - O banco continua no Supabase (`G4-Analysys`); o Render não hospeda Postgres.
@@ -244,7 +308,9 @@ Blueprint em `submissions/tiago-canatelli/render.yaml`, conectado ao fork no Git
 3. Views gold + `api` + catálogo
 4. Painel: `/ingestao`, `/catalogo` → `/kpis`, `/risco` → `/assistente`, `/prompts`
 5. `apps/api` (assistente + MCP, compartilham as funções `api.*`) → **M3**
-5b. Deploy no Render (API → dashboard → cron)
+5b. RAG: `pgvector`, `ravenlake index`, `api.search_knowledge`, tool `search_knowledge`
+5c. Adaptadores multi-LLM + avaliação com 10 perguntas
+5d. Deploy no Render (API → dashboard → cron)
 6. Modelo de risco → `gold.risk_scores`
 7. Relatório, README, PR → **M4**
 
