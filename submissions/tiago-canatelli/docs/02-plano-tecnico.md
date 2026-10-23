@@ -228,7 +228,7 @@ O MCP é um protocolo aberto; o servidor em `/mcp` (streamable HTTP) serve qualq
 | `catalog` | descrição de tabelas e colunas (`ops.catalog`) | a cada ingestão |
 | `data_quality` | achados de `docs/data-quality.md` e `ops.dq_results` | a cada ingestão |
 | `report` | seções do relatório do CEO | quando o relatório muda |
-| `churn_feedback` | `churn_events.feedback_text` com metadados (conta, motivo, data, MRR) | a cada ingestão |
+| `churn_feedback` | `churn_events.feedback_text` — **só 4 textos distintos no dataset**: indexar uma vez como referência, sem peso analítico | a cada ingestão |
 
 **Como funciona ("inteligente"):**
 1. **Indexação** no pipeline (`ravenlake index`): divide por seção (markdown) ou por registro (feedback), calcula `content_hash` e só gera embedding do que mudou.
@@ -236,7 +236,7 @@ O MCP é um protocolo aberto; o servidor em `/mcp` (streamable HTTP) serve qualq
 3. **Filtros por metadados** antes do ranking (segmento, período, tipo de fonte, veredito) — "só hipóteses confirmadas sobre Enterprise".
 4. **Reescrita da pergunta** pelo próprio LLM antes da busca (ex.: "por que os grandes saem?" → "churn contas Enterprise MRR alto motivo").
 5. **Citações:** cada trecho usado aparece no "Por quê" com link para a fonte.
-6. **Análise semântica do feedback:** agrupar `feedback_text` por tema (embeddings + clusterização) e comparar com o `reason_code` declarado — alimenta a hipótese H4 (motivo declarado ≠ causa real).
+6. ~~Análise semântica do feedback~~ — descartada: o dataset tem só 4 textos de feedback distintos. A H4 (motivo declarado ≠ causa) será testada com comportamento (uso, erros, tickets), não com texto. O RAG fica focado no conhecimento gerado pelas análises.
 
 **Embeddings:** via `LLMProvider.embed`. A Anthropic não oferece modelo de embedding; opções: Voyage AI (recomendado pela Anthropic), OpenAI `text-embedding-3-small`, ou modelo local (`fastembed`) só no pipeline. Dimensão fixada na migration conforme a escolha (decisão aberta).
 

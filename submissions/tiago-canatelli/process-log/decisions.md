@@ -30,3 +30,9 @@
 - **Escolhas:** skill `react-ux-engineer` (shadcn/ui); camada `churn_core.llm` com adaptadores (Anthropic padrão + OpenAI, Gemini, OpenAI-compatível); MCP streamable HTTP documentado por cliente; RAG com pgvector + full-text (busca híbrida) no próprio Supabase.
 - **Regra de ouro do RAG:** números sempre das tools (ao vivo); RAG traz contexto e explicação — evita a IA citar número velho de um documento.
 - **Custo:** aumenta o escopo; entrou no topo da ordem de cortes.
+
+### Churn = `churn_events` (fonte de verdade)
+- **Opções:** `accounts.churn_flag` · `churn_events` · `end_date`/flag da assinatura.
+- **Escolha (confirmada pelo Tiago):** `churn_events`; churn é evento recorrente, com reativação.
+- **Motivo:** as três fontes discordam (277 contas com evento e flag `False`; 35 com flag `True` sem evento; só 6 de 600 churns coincidem com fim de assinatura). Os eventos têm data, motivo e refund — é a única fonte que permite análise temporal.
+- **Consequência:** KPIs de receita dependem de uma regra de MRR vigente ainda a validar; flags viram achado de qualidade no relatório.

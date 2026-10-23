@@ -38,7 +38,7 @@ A RavenStack (SaaS B2B, ~500 contas, assinaturas mensais/anuais) viu o churn sub
 - Painel React: acompanhamento da ingestão, catálogo, dashboards de KPI, fila de contas em risco
 - Assistente de IA no painel, conectado ao Claude e preparado para outros provedores (OpenAI, Gemini, compatíveis), com biblioteca de prompts editáveis, que responde com o **porquê** e os números
 - MCP aberto para Claude e outras IAs (ChatGPT, Cursor, Gemini CLI…)
-- RAG sobre as análises (hipóteses, KPIs, catálogo, qualidade, feedback de clientes) com busca híbrida e citações
+- RAG sobre as análises (hipóteses, KPIs, catálogo, qualidade, relatório) com busca híbrida e citações
 - Experiência de uso cuidada (skill `react-ux-engineer`)
 - Modelo preditivo de risco de churn
 - Relatório de diagnóstico para o CEO + README de submissão + PR
@@ -128,4 +128,4 @@ Budget recomendado pelo desafio: 4–6h. O escopo acima soma ~8h; por isso há *
 | Nome e LinkedIn no README | — | Preciso dessas informações |
 | Modelo de embedding do RAG | Voyage AI / OpenAI `text-embedding-3-small` / local (`fastembed`) | Voyage (qualidade, recomendado pela Anthropic) — exige chave |
 | Provedores extras no lançamento | OpenAI, Gemini, OpenAI-compatível | Deixar adaptadores prontos; habilitar os que tiverem chave |
-| Definição de churn | `churn_events` / `accounts.churn_flag` / `end_date` | `churn_events` como fonte de verdade (aguardando sua confirmação) |
+| Definição de churn | ✅ Decidido em 2026-10-23: `churn_events` é a fonte de verdade; flags viram achado de qualidade | — |

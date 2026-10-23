@@ -39,6 +39,19 @@ Edge cases declarados pelo autor (tratar explicitamente, nunca descobrir por aca
 | CSAT nulo | 825 de 2.000 tickets (41%) | A "satisfação ok" ignora 41% dos tickets |
 | `reason_code` | features 114 · support 104 · budget 104 · unknown 95 · competitor 92 · pricing 91 | Distribuição quase uniforme → motivo declarado sozinho não explica nada |
 | Período | uso e churn de 2023-01 a 2024-12 | "Últimos meses" = fim de 2024 |
+| Eventos de churn por trimestre | 6 → 11 → 19 → 37 → 54 → 92 → 130 → **251** (2023Q1 → 2024Q4); cadastros estáveis (53–80/tri) | O "churn subiu" se confirma em eventos; falta normalizar pela base ativa |
+| `churn_date` coincide com `end_date` de alguma assinatura | 6 de 600 | **Churn e assinaturas são desacoplados**: não dá para medir churn pela assinatura |
+| Contas com churn e assinatura iniciada depois do último churn | 284 de 352 | Reativação é a regra, não exceção — ou inconsistência do gerador; tratar como achado |
+| Assinaturas abertas por conta | todas as contas têm ≥ 2 (até 13) | Regra de MRR vigente precisa ser validada (soma × mais recente) |
+| `mrr_amount` | 0 a 33.830, mediana 931; `arr = 12 × mrr` em 100% | MRR zero existe (trial?) |
+| `feedback_text` | 452 preenchidos, só **4 textos distintos** | Feedback livre não tem informação semântica → não vale clusterizar nem dar peso no RAG |
+
+### Decisões tomadas
+
+- **Churn = evento em `churn_events`** (decidido em 2026-10-23). Uma conta pode churnar várias vezes; `churn_date` é a data do evento. `accounts.churn_flag` e `subscriptions.churn_flag` são tratados como **achados de qualidade**, não como definição.
+- **Conta na base no início do mês M:** `signup_date` < início de M **e** (nenhum churn antes de M **ou** existe assinatura iniciada depois do último churn anterior a M).
+- **MRR da conta numa data D:** a validar no silver — comparar (a) soma das assinaturas ativas em D e (b) assinatura ativa mais recente; escolher a que gera ARPA plausível por plano e registrar em `decisions.md`.
+- **MRR perdido no churn:** MRR da conta na `churn_date` (regra acima).
 
 Regras e armadilhas:
 - 600 eventos de churn para 500 contas, com `is_reactivation` → a mesma conta pode churnar mais de uma vez. Defina se a taxa conta eventos ou contas e registre em `decisions.md`.

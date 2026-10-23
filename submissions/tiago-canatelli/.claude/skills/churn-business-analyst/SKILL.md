@@ -41,7 +41,13 @@ Estas fórmulas são a fonte única. Views do gold, painel e MCP devem usar exat
 | MRR em risco | probabilidade de churn × MRR atual | `risk_scores` |
 | MRR recuperável estimado | MRR em risco do grupo-alvo × taxa de salvamento assumida | (relatório) |
 
-Regras de definição a confirmar com os dados (cientista de dados): o que é "conta ativa"; como tratar reativação; trial conta como cliente?; mês do churn = `churn_date`.
+Definições de base (decididas — detalhes na skill `churn-data-scientist`, seção "Decisões tomadas"):
+- **Churn** = evento em `churn_events`; mês do churn = mês de `churn_date`. Reativações contam como novo ciclo.
+- **Conta ativa no início do mês** = cadastrada antes do mês e não churnada (ou reativada depois do último churn).
+- **MRR perdido** = MRR da conta na data do churn.
+- **Pendente:** regra de MRR vigente com assinaturas sobrepostas; se trial (`is_trial`) conta como cliente nas taxas — reportar com e sem trial até decidir.
+
+Limitação a explicar ao CEO: churn e assinaturas não conversam nos dados (só 6 de 600 churns coincidem com o fim de uma assinatura). Os KPIs de receita (GRR, NRR, expansion/contraction) dependem da regra de MRR e devem vir com essa ressalva.
 
 ## 3. Segmentos padrão
 
