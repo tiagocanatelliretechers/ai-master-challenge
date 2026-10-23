@@ -29,3 +29,18 @@
   - decidi que tudo roda no Supabase SaaS, sem Docker.
 - **Resultado:** 5 skills revisadas. Commits `3701de5`, `9ecaebe`, `f4557e8`, `4da3719`, `d0defc4`.
 - **Próximo:** F2 — migrations e ingestão no Supabase.
+
+## 2026-10-23 09:40–10:20 · F2 · Migrations e pipeline
+- **Pedi à IA:** começar a F2 com migrations e ingestão no Supabase G4-Analysys.
+- **A IA fez:**
+  - inspecionou os formatos reais dos CSVs;
+  - escreveu e aplicou 5 migrations: schemas, `ops`, bronze, silver com `silver.refresh`, qualidade (`ops.run_dq`, 16 checagens) e catálogo (`ops.refresh_catalog`);
+  - validou a camada SQL com um teste de fumaça desfeito no final (`raise exception` dentro de um bloco `DO`, que força rollback): rejeição de linhas inválidas, colisão de `usage_id`, CSAT nulo, checagens e catálogo;
+  - criou o pacote `ravenlake`: fonte Kaggle via SDK do MCP, upload para o bucket `raw`, COPY em lotes para o bronze e progresso em `ops.ingestion_steps`.
+- **Verifiquei / ajustei:**
+  - os `usage_id` duplicados (21) **não** são linhas repetidas, são eventos diferentes com o mesmo id; ficam mantidos com sufixo `#n`;
+  - o CSAT só tem notas 3, 4 e 5 (nenhuma 1 ou 2), o que virou uma checagem;
+  - o SDK do MCP 2.3 mudou a API (`streamable_http_client`, `is_error`), e o código foi ajustado;
+  - o `uv` não instalou pelo Homebrew; foi instalado pelo PyPI num ambiente virtual dedicado.
+- **Resultado:** `ravenlake version` → 1 (Kaggle MCP ok); lint, mypy e testes passando; advisors só com INFO de RLS sem policy, o que é intencional porque o acesso virá pela camada `api`.
+- **Próximo:** credenciais no `.env` → `ravenlake ingest`.

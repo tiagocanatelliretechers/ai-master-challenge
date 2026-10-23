@@ -1,0 +1,24 @@
+# Raiz do workspace uv do monorepo RavenStack Churn Lake.
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[dependency-groups]
+dev = ["ruff>=0.7", "mypy>=1.13", "pytest>=8.3"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+markers = ["db: testes que acessam o Supabase SaaS (G4-Analysys)"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["ravenlake"]
+known-third-party = ["supabase"]
