@@ -69,3 +69,9 @@ _(registrar em tempo real — skill `process-log-keeper`)_
 - **O que a IA fez:** o primeiro rascunho do relatório trazia o "MRR em risco por público" de memória (ex.: US$ 137 mil para contas novas).
 - **Como percebi:** conferindo cada número do relatório no banco antes de fechar.
 - **Correção:** recalculei em `api.risk_queue` (US$ 155 mil, 185 mil e 168 mil) e deixei explícito que os impactos não se somam.
+
+### FK do gold bloqueando o reprocessamento do silver
+- **O que a IA fez:** criou `gold.risk_scores` com FK para `silver.accounts`, mas o `silver.refresh()` faz `TRUNCATE` do silver. A primeira carga funcionou porque o gold ainda não existia.
+- **Como percebi:** ao testar a ingestão disparada pelo painel, que falhou com "cannot truncate a table referenced in a foreign key constraint". A transação foi desfeita e os dados ficaram intactos.
+- **Correção:** removi a FK (o gold é derivado e reconstruído depois do silver) e conferi que nenhuma outra tabela fora do silver referencia o silver.
+- **Lição:** testar o caminho de reprocessamento, não só a primeira carga.
