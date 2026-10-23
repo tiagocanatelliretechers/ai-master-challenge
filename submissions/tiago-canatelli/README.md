@@ -26,6 +26,8 @@ Montei um data lake no Supabase (raw → bronze → silver → gold) alimentado 
 | Data lake (migrations versionadas) | [`supabase/migrations/`](supabase/migrations/) |
 | Pipeline de ingestão (Kaggle MCP → Supabase) | [`packages/ravenlake/`](packages/ravenlake/) |
 | Qualidade de dados | [`docs/data-quality.md`](docs/data-quality.md) |
+| **Modelo de dados (DER) e como resolvemos o lake** | [`docs/modelo-de-dados.md`](docs/modelo-de-dados.md) · dicionário: [`docs/dicionario-de-dados.md`](docs/dicionario-de-dados.md) |
+| **Linha do tempo do dia** (passos reais, pelos commits) | [`docs/timeline-do-dia.md`](docs/timeline-do-dia.md) |
 
 ### Abordagem
 
@@ -100,7 +102,7 @@ Os impactos usam 3 cenários de salvamento (10, 20 e 30%) e não se somam, porqu
 4. Diagnóstico: testes de hipótese em script reproduzível; eu cobrei correção para múltiplos testes e a separação entre calendário e coorte.
 5. Gold, API, painel com papéis e deploy, com testes que comparam o gold contra o CSV.
 
-Linha do tempo real, tirada dos commits: [`process-log/timeline.md`](process-log/timeline.md).
+Linha do tempo real, tirada dos commits: [`docs/timeline-do-dia.md`](docs/timeline-do-dia.md) (detalhe por fase em [`process-log/timeline.md`](process-log/timeline.md)).
 
 ### Onde a IA errou e como corrigi
 
