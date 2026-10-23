@@ -22,7 +22,7 @@ Montei um data lake no Supabase (raw → bronze → silver → gold) alimentado 
 | Evidências de cada hipótese (reproduzível) | [`analysis/results/diagnostico.md`](analysis/results/diagnostico.md) · `uv run --group analysis python analysis/diagnostico.py` |
 | Lista de contas em risco | `analysis/results/risk_accounts.csv` e a tabela `gold.risk_scores` |
 | **Painel** com login por área (CEO, Financeiro, CS, Suporte, Produto, Marketing, Vendas, Dados + admin) | https://ravenstack-dashboard.onrender.com |
-| API, assistente de IA (Claude) e **MCP** | https://ravenstack-api.onrender.com · `/mcp` |
+| API, assistente de IA (Claude) e **MCP** para Claude e outras IAs | https://ravenstack-api.onrender.com · `/mcp` — guia de conexão em [`docs/mcp.md`](docs/mcp.md) |
 | Data lake (migrations versionadas) | [`supabase/migrations/`](supabase/migrations/) |
 | Pipeline de ingestão (Kaggle MCP → Supabase) | [`packages/ravenlake/`](packages/ravenlake/) |
 | Qualidade de dados | [`docs/data-quality.md`](docs/data-quality.md) |
