@@ -12,7 +12,12 @@ services:
     startCommand: uv run --no-sync --package api uvicorn api.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     buildFilter:
-      paths: [apps/api/**, packages/**, pyproject.toml, uv.lock, .python-version]  # relativo ao rootDir
+      paths:  # relativos à raiz do repositório (testado: relativos ao rootDir não filtram)
+        - submissions/tiago-canatelli/apps/api/**
+        - submissions/tiago-canatelli/packages/**
+        - submissions/tiago-canatelli/pyproject.toml
+        - submissions/tiago-canatelli/uv.lock
+        - submissions/tiago-canatelli/.python-version
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.8
@@ -34,7 +39,7 @@ services:
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
     buildFilter:
-      paths: ["**"]  # relativo ao rootDir (apps/dashboard)
+      paths: [submissions/tiago-canatelli/apps/dashboard/**]
     routes:
       - type: rewrite
         source: /*
