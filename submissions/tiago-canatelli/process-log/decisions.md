@@ -74,3 +74,9 @@
 ### KPIs de receita com ressalva explícita
 - **Problema:** mesmo corrigido, o GRR mensal fica em torno de 60%, porque o "MRR vigente" oscila quando a conta troca de assinatura.
 - **Escolha:** manter as views com a ressalva no comentário e usar logos, hazard e coortes como KPIs principais no painel e no relatório.
+
+### CI/CD: deploy automático pelo git com filtros por pasta
+- **Configuração no Render:** os dois serviços acompanham o fork, na branch `submission/tiago-canatelli`, com `autoDeploy: yes` (trigger: commit).
+- **Filtros de build:** a API só redeploya quando mudam `apps/api/**`, `packages/**`, `pyproject.toml`, `uv.lock` ou `.python-version`. O dashboard só redeploya quando muda `apps/dashboard/**` (o rootDir dele).
+- **Motivo:** antes dos filtros, cada commit de documentação redeployava a API (3 deploys inúteis no plano gratuito).
+- **Prova:** um push só de documentação não disparou deploy, e um push na API disparou (ver `journal.md`).
