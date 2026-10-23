@@ -8,3 +8,6 @@ __pycache__/
 node_modules/
 dist/
 **/supabase/.temp/
+
+# dashboard
+apps/dashboard/.env.local
