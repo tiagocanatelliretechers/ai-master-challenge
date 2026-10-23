@@ -17,6 +17,8 @@ Arquitetura e contratos: `docs/02-plano-tecnico.md`. Monorepo com raiz em `submi
 
 ## 2. Monorepo e ambiente
 
+**Ambiente único: Supabase SaaS.** Não usamos Docker nem `supabase start`. Desenvolvimento, testes, migrations e deploy apontam para o projeto hospedado `G4-Analysys` (ref `hzerhfuwziundqqezgcm`). O CLI do Supabase é usado só para falar com o projeto remoto (`supabase login` → `supabase link --project-ref hzerhfuwziundqqezgcm`).
+
 ```
 apps/api              FastAPI: /health, /assistant, /assistant/360, /models, /profiles, /mcp
 apps/dashboard        React (Vite)
@@ -73,7 +75,9 @@ ravenlake profiles sync    # carrega perfis de fábrica (.md) em app.analysis_pr
 
 ## 5. SQL e migrations
 
-- Uma migration por mudança lógica: `supabase/migrations/<timestamp>_<descricao>.sql`. Nunca editar migration aplicada; criar nova. Aplicar com `supabase db push` (ou MCP do Supabase em desenvolvimento, registrando a migration no repo do mesmo jeito).
+- Uma migration por mudança lógica: `supabase/migrations/<timestamp>_<descricao>.sql`. Nunca editar migration aplicada; criar nova.
+- Aplicação **sempre no projeto remoto**: `supabase db push --linked` (ou `apply_migration` do MCP do Supabase, com o mesmo arquivo commitado no repo). Antes de aplicar, conferir com `supabase migration list --linked` e `list_tables` o estado atual.
+- Migration destrutiva (drop, alter de tipo, delete) exige confirmação do Tiago antes de aplicar — não há banco local para ensaiar.
 - Schemas: `bronze`, `silver`, `gold`, `api`, `ops`, `app`. Só `api` exposto no PostgREST; o painel lê/escreve `ops`/`app` apenas por views e funções de `api`.
 - `COMMENT ON` em toda tabela e coluna (alimenta o catálogo e o RAG).
 - Views de `api` com `security_invoker = true`; funções `api.*` `stable` quando só leem; `security definer` só quando necessário, sempre com `set search_path = ''` e nomes qualificados.
@@ -158,7 +162,12 @@ ravenlake profiles sync    # carrega perfis de fábrica (.md) em app.analysis_pr
 | RAG | 10 perguntas com fonte esperada → recall@5 registrado no process log |
 | MCP | cada tool no MCP Inspector + print em `process-log/screenshots/` |
 
-Testes de banco rodam contra Supabase local (`supabase start`, exige Docker) quando disponível; senão, contra o projeto `G4-Analysys` em schema `test_*` criado e removido pelo próprio teste.
+**Testes de banco rodam no Supabase SaaS (`G4-Analysys`)** — nunca em Docker/local. Para não sujar os dados reais:
+1. **Padrão: transação com rollback.** Cada teste abre uma transação, executa (carga no bronze, `silver.refresh`, consultas, tentativas de SQL proibido) e faz `ROLLBACK` no fim. Nada persiste.
+2. **Quando o teste precisa de commit** (Realtime, Storage, fluxo completo do `ingest`): usa `trigger = 'test'` e um `run_id` próprio; fixture de limpeza apaga tudo desse `run_id` (bronze, ops, Storage `raw/_test/`) ao final, mesmo se o teste falhar.
+3. **Testes de leitura** (KPIs do gold × recálculo no CSV) só leem — rodam direto.
+4. Conexão de teste via `TEST_DATABASE_URL` (mesmo projeto, conexão direta ou pooler em modo session para permitir transação longa); nunca usar a chave `service_role` no código de teste da API.
+5. Suíte marcada com `@pytest.mark.db`; `pytest -m "not db"` roda os testes puros sem rede.
 
 ## 12. Git
 
@@ -168,4 +177,4 @@ Testes de banco rodam contra Supabase local (`supabase start`, exige Docker) qua
 
 ## 13. README de setup (sempre atualizado)
 
-Pré-requisitos (`uv`, Node 22, Supabase CLI) → `.env` a partir do `.env.example` → `supabase db push` → `uv run ravenlake ingest` → `uv run ravenlake profiles sync && uv run ravenlake index` → `uv run uvicorn api.main:app --reload` → `npm run dev` → conectar o MCP (instruções da tela `/conectar`) → links do deploy no Render. Testar o passo a passo do zero antes do PR.
+Pré-requisitos (`uv`, Node 22, Supabase CLI — sem Docker) → `.env` a partir do `.env.example` → `supabase login && supabase link --project-ref <ref>` → `supabase db push --linked` → `uv run ravenlake ingest` → `uv run ravenlake profiles sync && uv run ravenlake index` → `uv run uvicorn api.main:app --reload` → `npm run dev` → conectar o MCP (instruções da tela `/conectar`) → links do deploy no Render. Testar o passo a passo do zero antes do PR.

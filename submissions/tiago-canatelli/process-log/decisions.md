@@ -42,3 +42,9 @@
 - **Escolhas:** 8 perfis de fábrica (Executivo, Financeiro, CS, Suporte, Produto, Marketing, Vendas, Dados) em arquivos .md no formato SKILL.md, carregados em `app.analysis_profiles` e editáveis/versionáveis no painel; RAG por perfil via `profile_slugs`; endpoint 360 que roda as lentes em paralelo e sintetiza concordâncias e **discordâncias**; 7 personas de cliente por regra explícita, validadas contra clusterização.
 - **Também aceito:** KPIs de concentração de perda e intervalo até reativação; taxa de salvamento em 3 cenários (10/20/30%).
 - **Separação importante:** persona analista (quem pergunta) ≠ persona de cliente (sobre quem).
+
+### Tudo no Supabase SaaS, sem Docker/local
+- **Pedido:** testes e demais itens sempre no Supabase SaaS; nada rodando local via Docker.
+- **Escolha:** um ambiente só (`G4-Analysys`) para desenvolvimento, testes e produção; CLI do Supabase só para o projeto remoto (`link`, `db push --linked`, `gen types --project-id`).
+- **Como os testes não sujam os dados:** transação com rollback por padrão; testes com commit usam `run_id` de teste e limpeza automática; testes de KPI só leem.
+- **Risco aceito:** não há banco para ensaiar migrations → migration destrutiva só com confirmação explícita. O plano free pausa o projeto após inatividade — reativar antes de rodar.

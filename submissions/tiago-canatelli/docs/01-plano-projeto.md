@@ -106,7 +106,8 @@ Budget recomendado pelo desafio: 4–6h. O escopo acima soma ~8h; por isso há *
 | Risco | Impacto | Mitigação |
 |---|---|---|
 | Estourar o budget com infra | Análise rasa | Timebox por fase; cortar nesta ordem: (0) perfis além de Executivo/CS/Produto/Suporte saem só com instruções e prompts de fábrica, sem painel próprio; análise 360 sem upload de documentos, (1) outros provedores ficam só preparados (adaptador + teste), sem avaliação comparativa, (2) RAG só com hipóteses e feedback, (3) modelo vira regras de score, (4) MCP só pelo painel, (5) catálogo vira página estática. **Diagnóstico e relatório não encolhem** |
-| Limite de projetos free no Supabase (2 ativos) | Bloqueia F2 | Pausar um projeto antigo **ou** usar Postgres local (`supabase start`) e migrar depois |
+| Projeto Supabase free pausar por inatividade | Bloqueia testes e o painel | Reativar antes de trabalhar; tudo roda no Supabase SaaS (sem ambiente local) |
+| Migration errada no único ambiente | Dados ou schema quebrados | Migrations pequenas e versionadas; destrutivas só com confirmação; reingestão reconstrói tudo a partir do `raw/` |
 | Dataset sintético com sinais fracos | Conclusões frágeis | Dizer isso com clareza no relatório; reportar efeitos com intervalo/tamanho de amostra |
 | Confundir correlação com causa | Recomendação errada | Checklist de causalidade obrigatório (skill do cientista de dados) |
 | Leakage no modelo | Modelo "perfeito" e inútil | Snapshot temporal; features só até a data de corte |

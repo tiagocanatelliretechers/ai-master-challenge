@@ -29,7 +29,8 @@ Princípio: **a lógica de negócio vive no Postgres** (views e funções em `go
 | Camada | Tecnologia | Motivo |
 |---|---|---|
 | Banco / lake | Supabase Postgres 17 + Storage | Pedido do projeto; SQL, RLS, Realtime e Auth num só lugar |
-| Migrations | Supabase CLI (`supabase/migrations/*.sql`) | Reprodutível: `supabase db push` recria tudo |
+| Ambiente | **Supabase SaaS** (`G4-Analysys`) para desenvolvimento, testes e produção — sem Docker/local | Decisão do projeto; um ambiente só, o mesmo que o Render usa |
+| Migrations | Supabase CLI ligado ao projeto remoto (`supabase/migrations/*.sql`, `supabase db push --linked`) | Reprodutível e versionado no repo |
 | Pipeline | Python 3.12+, `psycopg[binary]` 3, `pandas`, `pydantic-settings`, `typer`, `supabase-py` (Storage) | COPY rápido, CLI simples, config tipada |
 | Qualidade | `ruff`, `mypy`, `pytest` | Padrão da skill de engenharia |
 | Modelo | `scikit-learn` (logística + gradient boosting), `shap` opcional | Interpretável, rápido |
@@ -340,6 +341,8 @@ Blueprint em `submissions/tiago-canatelli/render.yaml`, conectado ao fork no Git
 7. Relatório, README, PR → **M4**
 
 ## 12. Testes
+
+Todos os testes rodam contra o **Supabase SaaS** (`G4-Analysys`): transação com rollback por padrão; testes que precisam de commit usam `run_id` de teste com limpeza automática (detalhes na skill `python-software-engineer` §11).
 
 | O quê | Como |
 |---|---|
