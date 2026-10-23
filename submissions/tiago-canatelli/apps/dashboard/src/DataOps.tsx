@@ -53,12 +53,12 @@ export default function DataOpsPage({ canIngest }: { canIngest: boolean }) {
 
   return (
     <div className="space-y-4">
-      <Card title="Ingestão" subtitle="Kaggle MCP → raw (Storage) → bronze → silver → qualidade → gold → catálogo" source="api.ingestion_runs / api.ingestion_steps">
+      <Card title="Ingestão" subtitle="Kaggle MCP → raw (Storage) → bronze → silver → qualidade → gold → catálogo · agendada a cada 15 min (pg_cron do Supabase → API no Render)" source="api.ingestion_runs / api.ingestion_steps">
         <div className="mb-3 flex flex-wrap items-center gap-2">
           {sorted.slice(0, 8).map((r) => (
             <button key={r.run_id} onClick={() => setRunId(r.run_id)}
               className={`rounded-lg border px-2 py-1 text-xs ${current === r.run_id ? 'border-slate-900 dark:border-slate-100' : 'border-slate-200 dark:border-slate-700'}`}>
-              {new Date(r.started_at).toLocaleString('pt-BR')} <Badge tone={tone(r.status)}>{r.status}</Badge>
+              {new Date(r.started_at).toLocaleString('pt-BR')} <Badge tone={tone(r.status)}>{r.status}</Badge> <span className="muted">{r.trigger === 'cron' ? '⏱ agendada' : 'manual'}</span>
             </button>
           ))}
           <span className="ml-auto flex items-center gap-2 text-xs">
