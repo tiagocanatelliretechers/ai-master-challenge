@@ -44,3 +44,14 @@
   - o `uv` não instalou pelo Homebrew; foi instalado pelo PyPI num ambiente virtual dedicado.
 - **Resultado:** `ravenlake version` → 1 (Kaggle MCP ok); lint, mypy e testes passando; advisors só com INFO de RLS sem policy, o que é intencional porque o acesso virá pela camada `api`.
 - **Próximo:** credenciais no `.env` → `ravenlake ingest`.
+
+## 2026-10-23 10:30–10:50 · F2 · Primeira ingestão real
+- **Pedi à IA:** rodar a ingestão completa depois de eu preencher o `.env`.
+- **A IA fez:**
+  - conferiu o `.env` sem expor segredos e pegou que a `DATABASE_URL` estava com a URL HTTP do projeto em vez da connection string do Postgres;
+  - rodou `ravenlake ingest`: Kaggle MCP → 5 arquivos no bucket `raw` → 33.100 linhas no bronze (feature_usage em 5 lotes) → silver com 0 rejeitadas → 16 checagens → catálogo com 16 tabelas e 205 colunas, em 108 s;
+  - conferiu os totais de controle do silver contra os CSVs;
+  - rodou de novo para testar idempotência.
+- **Verifiquei / ajustei:** os totais de controle batem com o CSV (MRR 11.338.747, uso 250.525, CSAT 4.678, refunds 8.652,25); o segundo run deu `skipped`, sem duplicar o bronze; os sha256 batem com os do download manual.
+- **Resultado:** `docs/data-quality.md`. Run `3f3c24da` (success) e `f0133317` (skipped).
+- **Próximo:** F3 — diagnóstico (hipóteses) sobre o silver.
