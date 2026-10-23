@@ -1,6 +1,6 @@
 # Raiz do workspace uv do monorepo RavenStack Churn Lake.
 [tool.uv.workspace]
-members = ["packages/*"]
+members = ["apps/api", "packages/*"]
 
 [dependency-groups]
 dev = ["ruff>=0.7", "mypy>=1.13", "pytest>=8.3"]
@@ -26,3 +26,4 @@ known-third-party = ["supabase"]
 
 [tool.ruff.lint.per-file-ignores]
 "analysis/*" = ["E501"]  # textos narrativos longos nas evidências
+"apps/api/*" = ["E501"]  # prompts e SQL em texto
