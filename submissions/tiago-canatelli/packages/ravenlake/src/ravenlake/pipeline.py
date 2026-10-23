@@ -211,13 +211,18 @@ def ingest(
         dq_row = conn.execute("select ops.run_dq(%s)", (run_id,)).fetchone()
         errors = dq_row[0] if dq_row else 0
 
+        if errors:
+            conn.execute("select ops.refresh_catalog(%s)", (run_id,))
+            finish_run(conn, run_id, "failed", f"{errors} checagem(ns) de qualidade com erro")
+            log(f"FALHOU: {errors} checagem(ns) de erro — gold não atualizado; ver ops.dq_results")
+            return run_id, "failed"
+
+        log("gold (fatos, dimensões, score de risco) …")
+        scores = conn.execute("select gold.refresh(%s)", (run_id,)).fetchone()
+        log(f"  gold.risk_scores: {scores[0] if scores else 0} contas")
+
         log("catálogo …")
         conn.execute("select ops.refresh_catalog(%s)", (run_id,))
-
-        if errors:
-            finish_run(conn, run_id, "failed", f"{errors} checagem(ns) de qualidade com erro")
-            log(f"FALHOU: {errors} checagem(ns) de erro — ver ops.dq_results")
-            return run_id, "failed"
         finish_run(conn, run_id, "success")
         log(f"concluído em {time.monotonic() - t0:.1f}s")
         return run_id, "success"

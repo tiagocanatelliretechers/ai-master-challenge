@@ -476,7 +476,8 @@ def main() -> None:
     OUT.mkdir(exist_ok=True)
     d = load_silver()
     acc = d["accounts"].set_index("account_id")
-    subs = d["subscriptions"].sort_values("start_date")
+    # mesmo desempate do SQL (gold.subscription_at): início mais recente, depois maior subscription_id
+    subs = d["subscriptions"].sort_values(["start_date", "subscription_id"])
     churn = enrich_churn(d["churn_events"].sort_values("churn_date").copy(), subs, acc)
 
     h0_trend(acc, churn, subs)

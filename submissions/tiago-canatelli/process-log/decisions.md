@@ -57,3 +57,20 @@
 ### Não recomendar ação por canal nem por indústria
 - **Contexto:** `organic` apareceu com p = 0,025 e o "plano atual" com p < 0,001.
 - **Escolha:** descartar os dois. Canal não sobrevive à correção de Bonferroni (6 testes). O "plano atual" é a assinatura mais recente, muitas vezes posterior ao churn, ou seja, causalidade reversa. Pelo plano **na data do churn**, o mix de churn (35/37/32%) é quase igual ao mix ativo (33/32/35%).
+
+### Gold com lógica no banco e o modelo de risco em SQL
+- **Opções:** score em Python (statsmodels) gravado no banco × score em SQL.
+- **Escolha:** SQL (`gold.refresh_risk_scores`): é a taxa empírica do último trimestre por faixa de tempo de casa × churn anterior, com encolhimento (k = 30 contas-mês) nas células pequenas. Isso equivale ao Poisson do diagnóstico, cujos preditores são categóricos.
+- **Validação:** MRR em risco de 90 dias de US$ 333.467 no SQL contra US$ 334.121 no Python (0,2%). O pipeline e o cron não precisam de statsmodels.
+
+### Materializar dimensões por desempenho
+- **Problema:** funções SQL com `search_path` fixo não são incorporadas na consulta pelo Postgres. As views chamavam `as_of_date()` e `is_churned_on()` linha a linha e estouravam o timeout.
+- **Escolha:** `dim_account` e `dim_customer_persona` viraram materialized views, atualizadas em `gold.refresh()`. A data de referência é calculada uma vez por consulta.
+
+### Personas: "reincidente" = 2 ou mais churns
+- **Motivo:** 87% dos churns são seguidos de volta, então "já churnou 1 vez" não distingue ninguém. Com 2 ou mais churns, ficam 127 contas.
+- **Ressalva:** "âncora Enterprise" (22 contas) e "Pro anual" (24) ficam abaixo do mínimo de 30 da skill. Foram mantidas porque Âncora é 14% do MRR; isso vai para as limitações.
+
+### KPIs de receita com ressalva explícita
+- **Problema:** mesmo corrigido, o GRR mensal fica em torno de 60%, porque o "MRR vigente" oscila quando a conta troca de assinatura.
+- **Escolha:** manter as views com a ressalva no comentário e usar logos, hazard e coortes como KPIs principais no painel e no relatório.

@@ -82,6 +82,16 @@ def dq(
     console.print(table)
 
 
+@app.command()
+def gold() -> None:
+    """Atualiza o gold (fatos, dimensões, personas e score de risco) e o catálogo."""
+    s = _settings()
+    with pipeline.connect(s.database_url.get_secret_value()) as conn:
+        row = conn.execute("select gold.refresh()").fetchone()
+        conn.execute("select ops.refresh_catalog()")
+    console.print(f"gold atualizado: {row[0] if row else 0} contas com score de risco")
+
+
 @app.command("catalog")
 def catalog_refresh() -> None:
     """Reconstrói o catálogo (ops.catalog_tables / ops.catalog_columns)."""

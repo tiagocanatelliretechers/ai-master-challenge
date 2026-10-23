@@ -44,3 +44,17 @@ _(registrar em tempo real — skill `process-log-keeper`)_
 ### Nome de variável sombreando função do statsmodels
 - **O que a IA fez:** chamou o DataFrame de churn de `C`, o que quebrou o `C(...)` das fórmulas do statsmodels.
 - **Correção:** renomeei para `churn` no script final.
+
+### GRR com dupla contagem
+- **O que a IA fez:** a primeira `kpi_revenue_monthly` somava o MRR dos eventos de churn e também o MRR de fim de mês de contas que voltaram no mesmo mês, o que dava GRR mensal de cerca de 45%.
+- **Como percebi:** o número era implausível na primeira consulta de validação.
+- **Correção:** o MRR perdido passou a ser calculado por estado (ativa no início, churnada no fim), e o MRR dos eventos ficou numa coluna separada. Ainda assim, a receita sai com ressalva (ver `decisions.md`).
+
+### Views lentas por funções não incorporadas na consulta
+- **O que a IA fez:** usou funções SQL com `set search_path = ''` dentro de views chamadas por linha.
+- **Como percebi:** a consulta de validação estourou o `statement_timeout`.
+- **Correção:** materializei as dimensões e calculei a data de referência uma vez por consulta (migration `gold_performance`).
+
+### Ambiguidade de coluna em JOIN USING
+- **O que a IA fez:** `join persona_catalog using (persona)` com duas tabelas à esquerda que tinham a coluna `persona`. A migration falhou e nada foi aplicado.
+- **Correção:** troquei por `on pc.persona = p.persona`.

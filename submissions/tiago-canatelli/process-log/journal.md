@@ -70,3 +70,25 @@
   - deixei explícito que o mecanismo (onboarding) não está nos dados.
 - **Resultado:** causa raiz em `process-log/hypotheses.md` (síntese) e 432 contas ativas com MRR em risco estimado em US$ 320 mil em 90 dias.
 - **Próximo:** F4 — gold (views de KPI) + score de risco em `gold.risk_scores`.
+
+## 2026-10-23 12:15–13:25 · F4 · Camada gold e score de risco
+- **Pedi à IA:** views gold de KPI e `gold.risk_scores` no Supabase.
+- **A IA fez:** 4 migrations de gold.
+  - **Regras de base em SQL:** `as_of_date`, `is_churned_on` e `subscription_at`.
+  - **Fatos:** `fct_churn_event` e `fct_account_month` (5.807 contas-mês).
+  - **Dimensões:** `dim_account` e personas.
+  - **13 views de KPI:** receita, hazard, coorte, segmento, concentração, tipo de churn, reativação, suporte, churn silencioso, uso, features, motivo × comportamento e personas.
+  - **Score de risco** em SQL, além de `account_360` e `gold.refresh()`.
+
+  O pipeline passou a atualizar o gold depois da qualidade, e o comando `ravenlake gold` foi criado.
+- **Verifiquei / ajustei:**
+  - os números do gold batem com o diagnóstico (hazard 46,5 / 8,3; 432 contas ativas; churn de coorte em 6 meses);
+  - igualei o desempate de assinaturas entre Python e SQL, e agora o MRR bate exatamente;
+  - corrigi o GRR com dupla contagem;
+  - materializei as dimensões por desempenho;
+  - registrei a H9 (reativação em 16 dias) como inconclusiva.
+- **Resultado:**
+  - 7 testes passando, 4 deles conferindo o gold contra os CSVs no Supabase;
+  - advisors só com INFO de RLS, como esperado;
+  - MRR em risco de 90 dias: US$ 333 mil (35% nas 20 primeiras contas).
+- **Próximo:** F5 — camada `api`, painel React, assistente e MCP.

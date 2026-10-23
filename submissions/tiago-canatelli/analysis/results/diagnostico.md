@@ -11,8 +11,8 @@ Gerado por `analysis/diagnostico.py` a partir do silver (Supabase G4-Analysys). 
 | 2023Q4 |        37 |         73802 |               5 |                  227 |                  648 |                   16.3 |                         5.7 |
 | 2024Q1 |        54 |         89978 |              14 |                  283 |                 1093 |                   19.1 |                         4.9 |
 | 2024Q2 |        92 |        188929 |              36 |                  348 |                 1742 |                   26.4 |                         5.3 |
-| 2024Q3 |       130 |        292917 |              50 |                  420 |                 2769 |                   31   |                         4.7 |
-| 2024Q4 |       251 |        534374 |             139 |                  500 |                 4514 |                   50.2 |                         5.6 |
+| 2024Q3 |       130 |        293187 |              50 |                  420 |                 2769 |                   31   |                         4.7 |
+| 2024Q4 |       251 |        536680 |             139 |                  500 |                 4514 |                   50.2 |                         5.6 |
 
 Eventos sobem 6 → 251 por trimestre. Por conta cadastrada, a taxa sobe; por assinatura ativa, fica estável (~5%/tri desde 2023Q3) — as contas acumulam assinaturas. O CEO está certo sobre logos; a pergunta é *quem* está saindo (H8).
 
@@ -20,11 +20,11 @@ Eventos sobem 6 → 251 por trimestre. Por conta cadastrada, a taxa sobe; por as
 
 | plan       |   eventos |   mrr_perdido |   pct_eventos |   pct_mrr |
 |:-----------|----------:|--------------:|--------------:|----------:|
-| Basic      |       167 |         74347 |         0.305 | 0.0607818 |
-| Enterprise |       199 |        941071 |         0.364 | 0.769366  |
-| Pro        |       181 |        207760 |         0.331 | 0.169853  |
+| Basic      |       168 |         74898 |         0.307 | 0.0611036 |
+| Enterprise |       198 |        938882 |         0.362 | 0.765963  |
+| Pro        |       181 |        211974 |         0.331 | 0.172934  |
 
-MRR perdido somado nos eventos: US$ 1,223,178. Os 10% maiores eventos (54) concentram **43%** do MRR perdido. Enterprise é 36% dos eventos e **77%** do MRR perdido. 53 eventos não têm assinatura anterior à data do churn (dado inconsistente; fora da soma).
+MRR perdido somado nos eventos: US$ 1,225,754. Os 10% maiores eventos (54) concentram **43%** do MRR perdido. Enterprise é 36% dos eventos e **77%** do MRR perdido. 53 eventos não têm assinatura anterior à data do churn (dado inconsistente; fora da soma).
 
 ## H1 — A satisfação está mascarada?
 
@@ -70,10 +70,10 @@ O uso total é **plano** (~31 mil eventos/tri) e o uso por conta também (~63). 
 | reason_code   |   eventos |   mrr_mediano |   refund_medio |   downgrade_90d |
 |:--------------|----------:|--------------:|---------------:|----------------:|
 | budget        |       104 |         931   |          12    |            0.06 |
-| competitor    |        92 |        1298.5 |          13.08 |            0.13 |
-| features      |       114 |         760   |          16.72 |            0.08 |
-| pricing       |        91 |         704   |          14.65 |            0.04 |
-| support       |       104 |        1061   |          11.73 |            0.12 |
+| competitor    |        92 |        1225   |          13.08 |            0.13 |
+| features      |       114 |         796   |          16.72 |            0.08 |
+| pricing       |        91 |         741   |          14.65 |            0.04 |
+| support       |       104 |         987.5 |          11.73 |            0.12 |
 | unknown       |        95 |         995   |          18.34 |            0.09 |
 
 Motivos quase uniformes (91–114 cada), sem mudança ao longo do tempo (χ² p = 0.62) e com comportamento parecido. `feedback_text` tem só 4 textos distintos. O motivo declarado **não discrimina nada** — é campo de formulário, não diagnóstico.
@@ -140,18 +140,19 @@ Logit controlando canal, plano inicial, indústria, trial e licenças: coorte 20
 
 | tipo               |   eventos |    mrr |   pct_eventos |   pct_mrr |
 |:-------------------|----------:|-------:|--------------:|----------:|
-| 1º churn < 3 meses |       188 | 309044 |         0.313 |  0.252657 |
-| 1º churn ≥ 3 meses |       164 | 346591 |         0.273 |  0.283353 |
-| repetido (2º+)     |       248 | 567543 |         0.413 |  0.463991 |
+| 1º churn < 3 meses |       188 | 303081 |         0.313 |  0.247261 |
+| 1º churn ≥ 3 meses |       164 | 346591 |         0.273 |  0.282757 |
+| repetido (2º+)     |       248 | 576082 |         0.413 |  0.469982 |
 
 Leitura causal: tempo de casa precede o churn ✅, dose-resposta monotônica ✅, se mantém com controles ✅; alternativa "choque de calendário que atinge todos" — existe (rate ratio sobe por trimestre), mas a base antiga sobe ~1,5× enquanto as contas de 0–3 meses sobem ~8×. Contas que já churnaram antes **não** têm risco maior (rate ratio 0.88, p = 0.17): elas pesam porque voltam e saem de novo, não porque sejam piores. O **mecanismo** (onboarding, ativação, qualificação de venda) não está nos dados: é hipótese a validar com experimento.
 
 ## Contas em risco (lista de ação)
 
-432 contas ativas em 31/12/2024, MRR vigente US$ 1,039,108. Probabilidade de churn em 90 dias pelo modelo de H8 (tempo de casa + churn anterior, taxas de 2024Q4); MRR em risco esperado: **US$ 320,157**. As 20 primeiras concentram 32% do risco. Lista completa em `analysis/results/risk_accounts.csv`.
+432 contas ativas em 31/12/2024, MRR vigente US$ 1,060,987. Probabilidade de churn em 90 dias pelo modelo de H8 (tempo de casa + churn anterior, taxas de 2024Q4); MRR em risco esperado: **US$ 334,121**. As 20 primeiras concentram 35% do risco. Lista completa em `analysis/results/risk_accounts.csv`.
 
 | account_id   | account_name   | industry      | plan       | billing   |   mrr |   tenure_meses |   churns_anteriores |   prob_churn_90d |   mrr_em_risco_90d |
 |:-------------|:---------------|:--------------|:-----------|:----------|------:|---------------:|--------------------:|-----------------:|-------------------:|
+| A-c70870     | Company_253    | Cybersecurity | Enterprise | monthly   | 33830 |              3 |                   1 |             0.48 |           16226.8  |
 | A-d4e0d4     | Company_403    | FinTech       | Enterprise | annual    | 23283 |              3 |                   0 |             0.45 |           10582.1  |
 | A-ce550d     | Company_4      | HealthTech    | Enterprise | monthly   | 21691 |              3 |                   1 |             0.48 |           10404.2  |
 | A-56962b     | Company_177    | EdTech        | Enterprise | monthly   | 32437 |              9 |                   2 |             0.3  |            9682.36 |
@@ -161,9 +162,8 @@ Leitura causal: tempo de casa precede o churn ✅, dose-resposta monotônica ✅
 | A-5c046d     | Company_130    | EdTech        | Enterprise | annual    | 18507 |              6 |                   0 |             0.28 |            5187.33 |
 | A-c37601     | Company_48     | EdTech        | Enterprise | monthly   | 10746 |              3 |                   1 |             0.48 |            5154.39 |
 | A-d26ab4     | Company_497    | DevTools      | Enterprise | monthly   |  6567 |              2 |                   1 |             0.77 |            5073.08 |
-| A-054577     | Company_455    | EdTech        | Enterprise | monthly   | 16915 |              9 |                   0 |             0.28 |            4741.11 |
 | A-1f0636     | Company_368    | EdTech        | Enterprise | annual    | 20895 |             12 |                   0 |             0.21 |            4391.91 |
+| A-0f6450     | Company_400    | FinTech       | Enterprise | monthly   |  5572 |              1 |                   2 |             0.77 |            4304.43 |
 | A-c58f49     | Company_480    | EdTech        | Enterprise | annual    | 13930 |              6 |                   3 |             0.3  |            4158.07 |
 | A-e4144b     | Company_316    | EdTech        | Enterprise | annual    |  8159 |              3 |                   0 |             0.45 |            3708.26 |
 | A-410e86     | Company_210    | FinTech       | Enterprise | monthly   |  4776 |              2 |                   0 |             0.75 |            3566.8  |
-| A-0354fe     | Company_380    | Cybersecurity | Enterprise | monthly   |  6766 |              3 |                   2 |             0.48 |            3245.35 |
