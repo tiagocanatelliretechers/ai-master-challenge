@@ -45,7 +45,7 @@ Regras de definição a confirmar com os dados (cientista de dados): o que é "c
 
 ## 3. Segmentos padrão
 
-Plano · indústria · país · canal de aquisição · trial vs pago · billing (mensal/anual) · faixa de MRR (definir quartis no silver) · tempo de casa (0–3, 3–6, 6–12, 12+ meses). Toda análise de segmento mostra **contas e MRR** lado a lado.
+Plano atual (`subscriptions.plan_tier`) · indústria · país · canal de aquisição (`referral_source`) · trial vs pago · billing (`billing_frequency`) · auto-renovação · faixa de MRR (definir quartis no silver) · tempo de casa (0–3, 3–6, 6–12, 12+ meses). Toda análise de segmento mostra **contas e MRR** lado a lado.
 
 ## 4. Painéis por persona
 

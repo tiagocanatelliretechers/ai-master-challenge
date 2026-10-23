@@ -11,20 +11,27 @@ Contexto completo: `docs/01-plano-projeto.md` e `docs/02-plano-tecnico.md`.
 
 ## 1. Dados de origem
 
-| Arquivo | Grão | Chave | Liga com |
-|---|---|---|---|
-| `ravenstack_accounts.csv` (~500) | conta | `account_id` | todas |
-| `ravenstack_subscriptions.csv` (~5k) | assinatura | `subscription_id` | `account_id` |
-| `ravenstack_feature_usage.csv` (~25k) | dia × feature × assinatura | — | `subscription_id` → conta |
-| `ravenstack_support_tickets.csv` (~2k) | ticket | `ticket_id` | `account_id` |
-| `ravenstack_churn_events.csv` (~600) | evento de churn | `churn_event_id` | `account_id` |
+Fonte: [Kaggle · rivalytics/saas-subscription-and-churn-analytics-dataset](https://www.kaggle.com/datasets/rivalytics/saas-subscription-and-churn-analytics-dataset) (o mesmo do README do challenge). Sintético, gerado em Python + ChatGPT pelo autor **River @ Rivalytics** — o crédito ao autor é obrigatório pela licença (colocar no README e no relatório). Schema abaixo copiado do README do dataset em 2026-10-23.
 
-Antes de assumir nomes de colunas, **inspecione o CSV/tabela** (`head`, `information_schema`). Os nomes acima são da documentação do desafio e podem diferir.
+| Arquivo | Linhas | PK | FK | Colunas |
+|---|---|---|---|---|
+| `ravenstack_accounts.csv` | 500 | `account_id` | — | `account_name`, `industry`, `country` (ISO-2), `signup_date`, `referral_source` (organic/ads/event/partner/other), `plan_tier` (plano **inicial**: Basic/Pro/Enterprise), `seats`, `is_trial`, `churn_flag` |
+| `ravenstack_subscriptions.csv` | 5.000 | `subscription_id` | `account_id` | `start_date`, `end_date` (nulo = ativa), `plan_tier` (plano no faturamento), `seats`, `mrr_amount`, `arr_amount`, `is_trial`, `upgrade_flag`, `downgrade_flag`, `churn_flag`, `billing_frequency` (monthly/annual), `auto_renew_flag` |
+| `ravenstack_feature_usage.csv` | 25.000 | `usage_id` | `subscription_id` | `usage_date`, `feature_name` (40 features), `usage_count`, `usage_duration_secs`, `error_count`, `is_beta_feature` |
+| `ravenstack_support_tickets.csv` | 2.000 | `ticket_id` | `account_id` | `submitted_at`, `closed_at`, `resolution_time_hours`, `priority` (low/medium/high/urgent), `first_response_time_minutes`, `satisfaction_score` (1–5, **nulo = não respondeu**), `escalation_flag` |
+| `ravenstack_churn_events.csv` | 600 | `churn_event_id` | `account_id` | `churn_date`, `reason_code` (pricing/support/features…), `refund_amount_usd`, `preceding_upgrade_flag`, `preceding_downgrade_flag` (90 dias), `is_reactivation`, `feedback_text` |
 
-Observações que precisam ser checadas, não assumidas:
-- ~600 eventos de churn para ~500 contas → existem contas com mais de um churn (reativação?). Defina a regra antes de calcular taxas.
-- `feature_usage` liga por `subscription_id`, não por conta — sempre passe por `subscriptions` para chegar à conta.
-- Pode haver `churn_flag` na tabela de contas: é **resultado**, nunca feature do modelo.
+Mesmo assim, **inspecione o CSV/tabela antes de usar** (`head`, `information_schema`): o dataset tem atualização "mensal" declarada e pode ter mudado. Guarde o sha256 de cada arquivo no run de ingestão.
+
+Edge cases declarados pelo autor (tratar explicitamente, nunca descobrir por acaso): mudanças de plano no meio do ciclo, nulos (satisfação, uso, feedback), **reativações**, referências duplicadas, picos de uso em features beta. Existe um notebook público "Data Quality Audit: Why I Rejected 25,000 Rows" — sinal de que `feature_usage` pode ter problema sério (ex.: uso fora do período da assinatura). Verifique antes de confiar nessa tabela.
+
+Regras e armadilhas:
+- 600 eventos de churn para 500 contas, com `is_reactivation` → a mesma conta pode churnar mais de uma vez. Defina se a taxa conta eventos ou contas e registre em `decisions.md`.
+- `feature_usage` liga por `subscription_id` — sempre passe por `subscriptions` para chegar à conta.
+- `accounts.plan_tier` é o plano inicial; o plano atual vem da assinatura mais recente.
+- `churn_flag` (contas e assinaturas), `end_date`, `preceding_*_flag` e tudo de `churn_events` são **resultado**: nunca são features do modelo.
+- Não há tabela de pesquisa de satisfação separada: CSAT = `satisfaction_score` dos tickets; taxa de resposta = não nulos ÷ tickets.
+- O cenário do autor (piloto com egressos de bootcamp) difere do cenário do desafio (B2B com ~500 contas). Use o cenário do desafio na narrativa e cite a diferença em Limitações.
 
 ## 2. Convenções das camadas
 

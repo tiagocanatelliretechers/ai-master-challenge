@@ -7,3 +7,8 @@
 - **Resultado:** `docs/01-plano-projeto.md`, `docs/02-plano-tecnico.md`, 4 skills em `.claude/skills/`.
 - **Bloqueio:** criação do projeto Supabase `ravenstack-churn` falhou — limite de 2 projetos free ativos na organização.
 - **Próximo:** liberar o Supabase, baixar dados, F2 (ingestão).
+
+## 2026-10-23 · Validação da fonte de dados
+- **Pedi à IA:** confirmar se o dataset do Kaggle é a base do projeto.
+- **A IA fez:** abriu a página do dataset no navegador e leu o README do autor: schema completo, edge cases declarados (reativações, nulos, mudanças de plano, picos de beta), exigência de crédito ao autor e um notebook público sobre rejeição de 25.000 linhas.
+- **Ajustei:** a skill do cientista de dados tinha nomes de colunas *supostos*; troquei pelo schema real e transformei os edge cases em checagens obrigatórias.
