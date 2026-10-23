@@ -4,6 +4,7 @@ Rodar: uv run uvicorn api.main:app --reload
 """
 
 import hmac
+import os
 from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException
@@ -89,6 +90,7 @@ def health() -> dict[str, Any]:
         "status": "ok",
         "as_of_date": str(row[0]["as_of_date"]) if row else None,
         "assistant": db.settings.anthropic_api_key is not None,
+        "commit": os.environ.get("RENDER_GIT_COMMIT", "local")[:7],
         "model": db.settings.claude_model,
     }
 
