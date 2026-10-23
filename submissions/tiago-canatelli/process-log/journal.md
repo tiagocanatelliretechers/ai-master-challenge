@@ -108,3 +108,8 @@
   - recusei usar a chave do Render colada no chat e pedi que fosse para o `.env`;
   - recalculei no banco os impactos do relatório, que no rascunho eram estimados.
 - **Resultado:** https://ravenstack-dashboard.onrender.com e https://ravenstack-api.onrender.com.
+
+## 2026-10-23 12:40–13:00 · CI/CD no Render
+- **Pedi à IA:** garantir o deploy automático pelo git nesta branch.
+- **A IA fez:** confirmou pela API do Render que os dois serviços acompanham o fork, na branch `submission/tiago-canatelli`, com `autoDeploy` por commit (a API já tinha redeployado sozinha em 3 pushes). Depois configurou filtros de build e testou com pushes só de documentação.
+- **Verifiquei / ajustei:** caminhos relativos ao `rootDir` não filtram, e os dois serviços redeployaram. Os caminhos relativos à raiz do repositório funcionam: o dashboard parou de redeployar por mudanças fora de `apps/dashboard`. O teste final da API é este próprio commit (só documentação).
