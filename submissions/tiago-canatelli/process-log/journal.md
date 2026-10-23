@@ -113,3 +113,5 @@
 - **Pedi à IA:** garantir o deploy automático pelo git nesta branch.
 - **A IA fez:** confirmou pela API do Render que os dois serviços acompanham o fork, na branch `submission/tiago-canatelli`, com `autoDeploy` por commit (a API já tinha redeployado sozinha em 3 pushes). Depois configurou filtros de build e testou com pushes só de documentação.
 - **Verifiquei / ajustei:** caminhos relativos ao `rootDir` não filtram, e os dois serviços redeployaram. Os caminhos relativos à raiz do repositório funcionam: o dashboard parou de redeployar por mudanças fora de `apps/dashboard`. O teste final da API é este próprio commit (só documentação).
+
+- **Ajuste:** filtro da API trocado para `ignoredPaths` (docs, process-log, report, analysis, scripts, supabase, dashboard), nos dois formatos de caminho.
