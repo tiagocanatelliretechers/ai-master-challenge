@@ -195,7 +195,7 @@ def _run_ingest_background(force: bool, email: str, trigger: str = "manual") -> 
     try:
         run_ingest(
             source="kaggle",
-            trigger="manual",
+            trigger=trigger,
             force=force,
             log=lambda m: print(f"[ingest {email}] {m}"),
         )

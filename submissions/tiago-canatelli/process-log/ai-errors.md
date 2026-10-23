@@ -75,3 +75,8 @@ _(registrar em tempo real — skill `process-log-keeper`)_
 - **Como percebi:** ao testar a ingestão disparada pelo painel, que falhou com "cannot truncate a table referenced in a foreign key constraint". A transação foi desfeita e os dados ficaram intactos.
 - **Correção:** removi a FK (o gold é derivado e reconstruído depois do silver) e conferi que nenhuma outra tabela fora do silver referencia o silver.
 - **Lição:** testar o caminho de reprocessamento, não só a primeira carga.
+
+### Substituição de texto que não aconteceu (trigger do agendador)
+- **O que a IA fez:** usou um `str.replace` sobre uma linha que o formatador (ruff) já tinha quebrado em várias linhas. A troca não aconteceu e os runs do agendador ficavam registrados como `manual`.
+- **Como percebi:** no teste em produção, o run disparado pelo pg_cron apareceu com trigger `manual`.
+- **Correção:** ajustei a linha e passei a usar edições que falham se o trecho não existir.
