@@ -12,3 +12,9 @@
 - **Pedi à IA:** confirmar se o dataset do Kaggle é a base do projeto.
 - **A IA fez:** abriu a página do dataset no navegador e leu o README do autor: schema completo, edge cases declarados (reativações, nulos, mudanças de plano, picos de beta), exigência de crédito ao autor e um notebook público sobre rejeição de 25.000 linhas.
 - **Ajustei:** a skill do cientista de dados tinha nomes de colunas *supostos*; troquei pelo schema real e transformei os edge cases em checagens obrigatórias.
+
+## 2026-10-23 · Download dos dados via MCP do Kaggle
+- **Pedi à IA:** baixar o dataset pelo MCP remoto do Kaggle e avaliar sincronizar o Supabase por ele.
+- **A IA fez:** testou o endpoint `https://www.kaggle.com/mcp` direto por JSON-RPC (76 tools; `download_dataset` funciona sem login e devolve URL assinada), baixou o zip para `datasets/kaggle-rivalytics/` e conferiu: 500 / 5.000 / 25.000 / 2.000 / 600 linhas, cabeçalhos iguais ao schema da skill. `get_dataset_info`: versão 1, atualizada em 2025-07-21.
+- **Decisão:** o pipeline usa o Kaggle MCP como fonte, com checagem de versão + sha256 (ver `decisions.md`).
+- **sha256:** accounts `348d8ba9…`, churn_events `6391c41d…`, feature_usage `c081da2b…`, subscriptions `dcf1d93c…`, support_tickets `ba000695…`.

@@ -18,3 +18,9 @@
 - **Pedido:** trabalhar como monorepo e fazer os deploys no Render.
 - **Escolha:** raiz do monorepo em `submissions/tiago-canatelli/` (regra da PR); `apps/dashboard` (static site), `apps/api` (FastAPI com `/assistant` + `/mcp`), `packages/ravenlake` (cron), `packages/churn_core` (compartilhado); Blueprint `render.yaml`.
 - **Consequência:** a Edge Function do Supabase prevista antes foi substituída pela API Python no Render — backend todo em uma linguagem, e assistente e MCP num serviço só.
+
+### Fonte de dados: Kaggle MCP no pipeline
+- **Opções:** download manual · API REST do Kaggle com token · MCP remoto do Kaggle.
+- **Escolha:** MCP do Kaggle (`get_dataset_info` + `download_dataset`), com fonte local como fallback.
+- **Motivo:** funciona sem credencial; permite sincronização incremental por versão; REST exige token.
+- **Ressalva:** o dataset está na versão 1 desde 2025-07-21 — a sincronização é demonstrativa.

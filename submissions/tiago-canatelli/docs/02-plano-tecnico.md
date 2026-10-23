@@ -80,7 +80,7 @@ Princípio: **a lógica de negócio vive no Postgres** (views e funções em `go
 
 | Tabela | Campos principais |
 |---|---|
-| `ops.ingestion_runs` | `run_id`, `started_at`, `finished_at`, `status` (running/success/failed), `trigger`, `git_sha` |
+| `ops.ingestion_runs` | `run_id`, `started_at`, `finished_at`, `status` (running/success/failed/skipped), `trigger`, `source` (kaggle_mcp/local), `source_version`, `git_sha` |
 | `ops.ingestion_steps` | `run_id`, `dataset`, `layer` (raw/bronze/silver/gold), `file_sha256`, `bytes`, `rows_read`, `rows_loaded`, `rows_rejected`, `duration_ms`, `status`, `error` |
 | `ops.dq_results` | `run_id`, `check_name`, `table`, `severity`, `status`, `failing_rows`, `sample jsonb` |
 | `ops.catalog` | `schema`, `table`, `column`, `data_type`, `description`, `layer`, `business_owner`, `is_pii`, `is_key`, `row_count`, `null_pct`, `distinct_count`, `last_refreshed` |
@@ -105,15 +105,31 @@ Contrato de resposta (no system prompt, igual para painel e MCP): **Resposta** �
 CLI `ravenlake` (Python, `typer`):
 
 ```
-ravenlake ingest --source ../datasets        # run completo
+ravenlake ingest                             # run completo, fonte Kaggle MCP
+ravenlake ingest --source ../datasets        # fonte local (offline)
 ravenlake ingest --dataset churn_events      # só um dataset
 ravenlake dq                                 # só checagens
 ravenlake catalog refresh                    # só catálogo
 ravenlake score                              # recalcula risk_scores
 ```
 
-Fluxo de `ingest`:
-1. Abre `ops.ingestion_runs` (status `running`).
+### 4.1 Fonte: Kaggle via MCP
+
+O pipeline busca os dados no **MCP remoto do Kaggle** (`https://www.kaggle.com/mcp`, JSON-RPC sobre HTTP), testado em 2026-10-23: funciona sem login para datasets públicos.
+
+1. `get_dataset_info` → lê `current_version_number` e `last_updated` (hoje: versão 1, de 2025-07-21).
+2. Compara com a última versão ingerida em `ops.ingestion_runs.source_version`. Se for igual e os hashes baterem, o run termina como `skipped`.
+3. `download_dataset` → devolve uma URL assinada (válida por 3 dias) do `archive.zip`; baixa, descompacta e calcula o sha256 de cada CSV.
+4. Segue o fluxo abaixo a partir do upload para `raw/`.
+
+- Adaptadores no `ravenlake`: `KaggleMcpSource` (padrão) e `LocalSource --source datasets/` (fallback offline e testes).
+- Token Kaggle opcional (`KAGGLE_MCP_TOKEN`, header bearer) caso o acesso anônimo deixe de funcionar.
+- Por que MCP e não a API REST do Kaggle: o endpoint REST de download exige credencial (404 sem login); o MCP entrega a URL assinada sem login e é a mesma interface que o assistente de IA usa.
+- Limite honesto: o dataset não muda desde 2025-07, então o cron do Render demonstra o padrão de sincronização incremental, mas na prática vai registrar `skipped`.
+
+### 4.2 Fluxo de `ingest`
+
+1. Abre `ops.ingestion_runs` (status `running`, `source = kaggle_mcp`, `source_version`).
 2. Para cada CSV: calcula sha256 → sobe para `raw/` (pula se o hash já existe) → registra step `raw`.
 3. `COPY` em lotes para `bronze.*` com `_row_hash`; atualiza `rows_loaded` a cada lote (progresso Realtime) → step `bronze`.
 4. `select silver.refresh(run_id)` → step `silver` com rejeitados.
@@ -213,7 +229,7 @@ Blueprint em `submissions/tiago-canatelli/render.yaml`, conectado ao fork no Git
 |---|---|---|---|---|
 | `ravenstack-dashboard` | static site | `apps/dashboard` | `npm ci && npm run build` → publica `dist`; rewrite `/* → /index.html` | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL` |
 | `ravenstack-api` | web service (Python) | raiz do monorepo | `uv sync --package api` → `uv run uvicorn api.main:app --host 0.0.0.0 --port $PORT`; health check `/health` | `ANALYST_RO_DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_JWT_SECRET`, `ANTHROPIC_API_KEY` (sync: false), `MCP_TOKEN` (generateValue), `PYTHON_VERSION` |
-| `ravenstack-ingest` | cron job (opcional) | raiz do monorepo | `uv run ravenlake ingest --from-storage` (diário) | `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
+| `ravenstack-ingest` | cron job (opcional) | raiz do monorepo | `uv run ravenlake ingest` (diário; checa versão no Kaggle MCP) | `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
 
 - O banco continua no Supabase (`G4-Analysys`); o Render não hospeda Postgres.
 - Conexão do Render ao Supabase via **pooler** (porta 6543, modo transaction) para não esgotar conexões.
